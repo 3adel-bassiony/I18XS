@@ -1,6 +1,10 @@
+# I18Trans ( Beta )
+
+Elevate your app's global appeal with our i18n package, featuring easy locale management and dynamic content loading. Experience advanced pluralization, formatting, and automatic LTR/RTL detection for seamless language transitions. Customize and extend effortlessly, ensuring optimal performance and user experience.
+
 # Getting Started
 
-Getting up and running with I18T is a breeze. Choose your preferred package manager from the options below and follow the simple installation steps:
+Getting up and running with I18Trans is a breeze. Choose your preferred package manager from the options below and follow the simple installation steps:
 
 #### NPM
 
@@ -28,18 +32,18 @@ pnpm install i18trans
 
 # Usage
 
-Once you have installed I18T, integrating it into your project is straightforward. Below are the basic steps to get you started:
+Once you have installed I18Trans, integrating it into your project is straightforward. Below are the basic steps to get you started:
 
-First, import I18T into your JavaScript or TypeScript file:
+First, import I18Trans into your JavaScript or TypeScript file:
 
 ```javascript
-import I18T from 'i18t'
+import I18Trans from 'i18trans'
 ```
 
 Then create a new instance for i18t and pass the configuration to it:
 
 ```javascript
-const i18t = new I18T({
+const i18trans = new I18Trans({
 	defaultLocale: 'en',
 	fallbackLocale: 'en',
 	translations: {
@@ -52,7 +56,7 @@ const i18t = new I18T({
 And then you can use it like this:
 
 ```javascript
-const localizedMessage = i18t.t('Hello_World') // -> Hello World
+const localizedMessage = i18trans.t('Hello_World') // -> Hello World
 ```
 
 # Documentation
@@ -63,7 +67,7 @@ The I18T package comes with a comprehensive set of features designed to make int
 
     -   **Simple Locale Management**: Easily switch between languages in your application.
     -   **Dynamic Content Loading**: Load language resources as needed, without bloating your application.
-    -   **Pluralization and Formatting**: Advanced support for plural forms and number formatting.
+    -   **Pluralization and Formatting**: Advanced support for plural forms and number formatting. ( ⏳ Coming Soon )
     -   **Customization and Extensibility**: Extend or customize functionalities to fit your application’s needs.
     -   **LTR & RTL Detection**: Detect LTR & RTL for easy access and usage
 
@@ -74,7 +78,7 @@ The I18T package comes with a comprehensive set of features designed to make int
     -   **Initializing the Library:** Learn how to set up I18T in your project.
 
         ```javascript
-        const i18t = new I18T({
+        const i18t = new I18Trans({
         	defaultLocale: 'en',
         	fallbackLocale: 'en',
         	translations: {
@@ -89,44 +93,44 @@ The I18T package comes with a comprehensive set of features designed to make int
     -   **Localize a message**: You can localize a message using one of those methods
 
         ```javascript
-        i18t.t('Hello_World') // -> Hello World
-        i18t.formatMessage('Hello_World') // -> Hello World
+        i18trans.t('Hello_World') // -> Hello World
+        i18trans.formatMessage('Hello_World') // -> Hello World
         ```
 
     -   **Localize a message in nested objects**: You can localize a message using one of those methods
 
         ```javascript
-        i18t.t('Common.Foo.Bar.Hello_World') // -> Hello World
+        i18trans.t('Common.Foo.Bar.Hello_World') // -> Hello World
         ```
 
     -   **Get Default Locale**: Understand how to change locales dynamically.
 
         ```javascript
-        i18t.defaultLocale // -> 'en'
+        i18trans.defaultLocale // -> 'en'
         ```
 
     -   **Get Current Locale**: Understand how to change locales dynamically.
 
         ```javascript
-        i18t.currentLocale // -> 'en'
+        i18trans.currentLocale // -> 'en'
         ```
 
     -   **Get Current Locale**: Understand how to change locales dynamically.
 
         ```javascript
-        i18t.supportedLocales // -> ['en', 'ar']
+        i18trans.supportedLocales // -> ['en', 'ar']
         ```
 
     -   **Change Locale**: You can change the current locale for I18T
 
         ```javascript
-        i18t.changeLocale('es') // -> Update the current locale
+        i18trans.changeLocale('es') // -> Update the current locale
         ```
 
     -   **Check If Key Exists:** Understand how to change locales dynamically.
 
         ```javascript
-        i18t.hasKey('Hello_World') // -> True || False
+        i18trans.hasKey('Hello_World') // -> True || False
         ```
 
 # Support and Questions
