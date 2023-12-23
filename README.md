@@ -40,7 +40,7 @@ First, import I18XS into your JavaScript or TypeScript file:
 import I18XS from 'i18xs'
 ```
 
-Then create a new instance for i18t and pass the configuration to it:
+Then create a new instance for i18xs and pass the configuration to it:
 
 ```javascript
 const i18xs = new I18XS({
@@ -61,7 +61,7 @@ const localizedMessage = i18xs.t('Hello_World') // -> Hello World
 
 # Documentation
 
-The I18T package comes with a comprehensive set of features designed to make internationalization in your application straightforward and efficient. This section provides an overview of its capabilities and guides on how to use them effectively.
+The I18XS package comes with a comprehensive set of features designed to make internationalization in your application straightforward and efficient. This section provides an overview of its capabilities and guides on how to use them effectively.
 
 -   ### Features Overview
 
@@ -73,12 +73,12 @@ The I18T package comes with a comprehensive set of features designed to make int
 
 -   ### Usage & Configuration
 
-    -   **Installation**: Refer to the [Getting Started](#getting-started) section for instructions on how to install I18T using various package managers.
+    -   **Installation**: Refer to the [Getting Started](#getting-started) section for instructions on how to install I18XS using various package managers.
 
-    -   **Initializing the Library:** Learn how to set up I18T in your project.
+    -   **Initializing the Library:** Learn how to set up I18XS in your project.
 
         ```javascript
-        const i18t = new I18XS({
+        const i18xs = new I18XS({
         	defaultLocale: 'en',
         	fallbackLocale: 'en',
         	translations: {
@@ -121,7 +121,7 @@ The I18T package comes with a comprehensive set of features designed to make int
         i18xs.supportedLocales // -> ['en', 'ar']
         ```
 
-    -   **Change Locale**: You can change the current locale for I18T
+    -   **Change Locale**: You can change the current locale for I18XS
 
         ```javascript
         i18xs.changeLocale('es') // -> Update the current locale
@@ -135,21 +135,21 @@ The I18T package comes with a comprehensive set of features designed to make int
 
 # Support and Questions
 
-If you have any questions or need support while using I18T, feel free to open an issue on our [GitHub repository](#link-to-repo) or reach out to the community for help.
+If you have any questions or need support while using I18XS, feel free to open an issue on our [GitHub repository](#link-to-repo) or reach out to the community for help.
 
 For the complete and detailed guide, please refer to our [official documentation](#link-to-detailed-docs).
 
 # Contribution
 
-First off, thank you for considering contributing to I18T! It's people like you who make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
+First off, thank you for considering contributing to I18XS! It's people like you who make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
 
-There are many ways you can contribute to I18T, even if you're not a technical person:
+There are many ways you can contribute to I18XS, even if you're not a technical person:
 
 -   **Submit Bug Reports:** If you find a bug, please open an issue. Remember to include a clear description and as much relevant information as possible.
 -   **Feature Suggestions:** Have an idea for a new feature or an improvement? Open an issue and tag it as a feature request.
 -   **Code Contributions:** Interested in adding a feature or fixing a bug? Awesome! Please open a pull request with your changes.
 -   **Documentation:** Good documentation is key to any project. If you see something unclear or missing, feel free to submit a pull request.
--   **Spread the Word:** Share I18T with your network and let others know about it.
+-   **Spread the Word:** Share I18XS with your network and let others know about it.
 
 # Guidelines for Contributions
 
@@ -161,4 +161,4 @@ Increase the version numbers in any example files and the README to the new vers
 
 # License
 
-I18T is licensed under the MIT License. This license permits use, modification, and distribution, free of charge, for both private and commercial purposes. It also offers a good balance between protecting the author's rights and allowing for flexibility and freedom in the use of the software.
+I18XS is licensed under the MIT License. This license permits use, modification, and distribution, free of charge, for both private and commercial purposes. It also offers a good balance between protecting the author's rights and allowing for flexibility and freedom in the use of the software.

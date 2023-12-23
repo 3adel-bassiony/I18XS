@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-type I18TConfig = {
+type I18XSConfig = {
 	locale?: string
 	locales?: string[]
 	translations?: LocaleMessages | null
@@ -19,7 +19,7 @@ export default class I18XS {
 	localesDir: string | null = null
 	translations: LocaleMessages = {}
 
-	constructor({ locales = ['en'], locale = 'en', localesDir = null, translations = null }: I18TConfig) {
+	constructor({ locales = ['en'], locale = 'en', localesDir = null, translations = null }: I18XSConfig) {
 		this.locales = locales
 		this.locale = locale
 		this.localesDir = localesDir

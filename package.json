@@ -15,11 +15,11 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/3adel-bassiony/i18t.git"
+		"url": "git+https://github.com/3adel-bassiony/i18xs.git"
 	},
 	"keywords": [
 		"i18n",
-		"i18t",
+		"i18xs",
 		"localization",
 		"internationalization",
 		"globalization",
@@ -29,9 +29,9 @@
 	"author": "Adel Bassiony",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/3adel-bassiony/i18t/issues"
+		"url": "https://github.com/3adel-bassiony/i18xs/issues"
 	},
-	"homepage": "https://github.com/3adel-bassiony/i18t#readme",
+	"homepage": "https://github.com/3adel-bassiony/i18xs#readme",
 	"devDependencies": {
 		"@types/bun": "^1.0.0",
 		"@typescript-eslint/eslint-plugin": "^6.15.0",
