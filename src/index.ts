@@ -13,7 +13,7 @@ type LocaleMessages = {
 
 type Data = Record<string, unknown>
 
-export default class I18Trans {
+export default class I18XS {
 	locales: string[] = ['en']
 	locale: string = 'en'
 	localesDir: string | null = null
@@ -55,7 +55,7 @@ export default class I18Trans {
 		return rtlLanguages.includes(this.locale)
 	}
 
-	changeLocale(locale: string): I18Trans {
+	changeLocale(locale: string): I18XS {
 		this.locale = locale
 		console.log('switching locale to "%s"', this.locale)
 

@@ -1,53 +1,53 @@
-# I18Trans ( Beta )
+# i18XS ( Beta )
 
 Elevate your app's global appeal with our i18n package, featuring easy locale management and dynamic content loading. Experience advanced pluralization, formatting, and automatic LTR/RTL detection for seamless language transitions. Customize and extend effortlessly, ensuring optimal performance and user experience.
 
 # Getting Started
 
-Getting up and running with I18Trans is a breeze. Choose your preferred package manager from the options below and follow the simple installation steps:
+Getting up and running with I18XS is a breeze. Choose your preferred package manager from the options below and follow the simple installation steps:
 
 #### NPM
 
 ```bash
-npm i i18trans
+npm i i18xs
 ```
 
 #### Bun
 
 ```bash
-bun i i18trans
+bun i i18xs
 ```
 
 #### Yarn
 
 ```bash
-yarn add i18trans
+yarn add i18xs
 ```
 
 #### Pnpm
 
 ```bash
-pnpm install i18trans
+pnpm install i18xs
 ```
 
 # Usage
 
-Once you have installed I18Trans, integrating it into your project is straightforward. Below are the basic steps to get you started:
+Once you have installed I18XS, integrating it into your project is straightforward. Below are the basic steps to get you started:
 
-First, import I18Trans into your JavaScript or TypeScript file:
+First, import I18XS into your JavaScript or TypeScript file:
 
 ```javascript
-import I18Trans from 'i18trans'
+import I18XS from 'i18xs'
 ```
 
 Then create a new instance for i18t and pass the configuration to it:
 
 ```javascript
-const i18trans = new I18Trans({
+const i18xs = new I18XS({
 	defaultLocale: 'en',
 	fallbackLocale: 'en',
 	translations: {
-		Hello_World: 'Hello World',
+		'Hello_World': 'Hello World',
 		// ... more key-value pairs
 	},
 })
@@ -56,7 +56,7 @@ const i18trans = new I18Trans({
 And then you can use it like this:
 
 ```javascript
-const localizedMessage = i18trans.t('Hello_World') // -> Hello World
+const localizedMessage = i18xs.t('Hello_World') // -> Hello World
 ```
 
 # Documentation
@@ -78,11 +78,11 @@ The I18T package comes with a comprehensive set of features designed to make int
     -   **Initializing the Library:** Learn how to set up I18T in your project.
 
         ```javascript
-        const i18t = new I18Trans({
+        const i18t = new I18XS({
         	defaultLocale: 'en',
         	fallbackLocale: 'en',
         	translations: {
-        		Hello_World: 'Hello World',
+        		'Hello_World': 'Hello World',
         		// ... more key-value pairs
         	},
         })
@@ -93,44 +93,44 @@ The I18T package comes with a comprehensive set of features designed to make int
     -   **Localize a message**: You can localize a message using one of those methods
 
         ```javascript
-        i18trans.t('Hello_World') // -> Hello World
-        i18trans.formatMessage('Hello_World') // -> Hello World
+        i18xs.t('Hello_World') // -> Hello World
+        i18xs.formatMessage('Hello_World') // -> Hello World
         ```
 
     -   **Localize a message in nested objects**: You can localize a message using one of those methods
 
         ```javascript
-        i18trans.t('Common.Foo.Bar.Hello_World') // -> Hello World
+        i18xs.t('Common.Foo.Bar.Hello_World') // -> Hello World
         ```
 
     -   **Get Default Locale**: Understand how to change locales dynamically.
 
         ```javascript
-        i18trans.defaultLocale // -> 'en'
+        i18xs.defaultLocale // -> 'en'
         ```
 
     -   **Get Current Locale**: Understand how to change locales dynamically.
 
         ```javascript
-        i18trans.currentLocale // -> 'en'
+        i18xs.currentLocale // -> 'en'
         ```
 
     -   **Get Current Locale**: Understand how to change locales dynamically.
 
         ```javascript
-        i18trans.supportedLocales // -> ['en', 'ar']
+        i18xs.supportedLocales // -> ['en', 'ar']
         ```
 
     -   **Change Locale**: You can change the current locale for I18T
 
         ```javascript
-        i18trans.changeLocale('es') // -> Update the current locale
+        i18xs.changeLocale('es') // -> Update the current locale
         ```
 
     -   **Check If Key Exists:** Understand how to change locales dynamically.
 
         ```javascript
-        i18trans.hasKey('Hello_World') // -> True || False
+        i18xs.hasKey('Hello_World') // -> True || False
         ```
 
 # Support and Questions
