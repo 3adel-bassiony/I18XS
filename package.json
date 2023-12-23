@@ -1,0 +1,41 @@
+{
+	"name": "i18t",
+	"version": "0.1.0",
+	"description": "A lightweight and simple package for i18n and localization for node.js and bun",
+	"main": "index.js",
+	"scripts": {
+		"clean": "rm -rf build && echo 'Done.'",
+		"build": "bun run clean && bun build ./src/index.ts --outdir ./build --target node --format esm --spiting",
+		"lint": "eslint . --ext=.ts",
+		"format": "prettier --write .",
+		"test": "vitest",
+		"coverage": "vitest run --coverage"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/3adel-bassiony/i18t.git"
+	},
+	"keywords": [
+		"i18n",
+		"i18t",
+		"localization",
+		"internationalization"
+	],
+	"author": "Adel Bassiony",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/3adel-bassiony/i18t/issues"
+	},
+	"homepage": "https://github.com/3adel-bassiony/i18t#readme",
+	"devDependencies": {
+		"@types/bun": "^1.0.0",
+		"eslint": "^8.56.0",
+		"eslint-plugin-import": "^2.29.1",
+		"prettier": "^3.1.1",
+		"typescript": "^5.3.3",
+		"vitest": "^1.1.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	}
+}

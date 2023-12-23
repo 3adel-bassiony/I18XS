@@ -1,0 +1,13 @@
+{
+	"common": {
+		"Success": "Success",
+		"Failed": "Failed"
+	},
+	"validation": {
+		"string": {
+			"required": "This field is required"
+		}
+	},
+	"Hello_World": "Hello World",
+	"Welcome_Message": "Welcome {name}"
+}

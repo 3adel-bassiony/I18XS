@@ -1,0 +1,24 @@
+{
+	"include": ["**/*"],
+	"exclude": ["node_modules", "build"],
+	"compilerOptions": {
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"module": "ESNext",
+		"esModuleInterop": true,
+		"target": "ESNext",
+		"moduleResolution": "Bundler",
+		"outDir": "build",
+		"forceConsistentCasingInFileNames": true,
+		"strictPropertyInitialization": false,
+		"strict": true,
+		"skipLibCheck": true,
+		"downlevelIteration": true,
+		"allowImportingTsExtensions": true,
+		"noEmit": true,
+		"composite": true,
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	}
+}

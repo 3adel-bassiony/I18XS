@@ -1,0 +1,13 @@
+{
+	"common": {
+		"Success": "نجاح",
+		"Failed": "فشل"
+	},
+	"validation": {
+		"string": {
+			"required": "هذا الحقل مطلوب"
+		}
+	},
+	"Hello_World": "مرحبًا بالعالم",
+	"Welcome_Message": "مرحبًا {name}"
+}
