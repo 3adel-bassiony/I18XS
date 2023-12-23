@@ -1,6 +1,6 @@
 {
 	"name": "i18xs",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "A lightweight and simple package for i18n and localization for node.js",
 	"main": "build/index.js",
 	"types": "index.d.ts",
