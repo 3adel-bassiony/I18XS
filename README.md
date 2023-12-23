@@ -1,6 +1,6 @@
 # i18XS ( Beta )
 
-Elevate your app's global appeal with our i18n package, featuring easy locale management and dynamic content loading. Experience advanced pluralization, formatting, and automatic LTR/RTL detection for seamless language transitions. Customize and extend effortlessly, ensuring optimal performance and user experience.
+Discover the power of simplicity with I18XS, a remarkably compact and efficient i18n solution tailored for JavaScript and Node.js. Weighing in at just 3kb, this 'extra small' package is a game-changer for developers seeking to globalize their applications without the bulk and complexity of traditional i18n libraries. I18XS stands out as the ideal choice for modern, lightweight, and high-performance internationalization needs.
 
 # Getting Started
 
@@ -47,7 +47,7 @@ const i18xs = new I18XS({
 	defaultLocale: 'en',
 	fallbackLocale: 'en',
 	translations: {
-		'Hello_World': 'Hello World',
+		Hello_World: 'Hello World',
 		// ... more key-value pairs
 	},
 })
@@ -82,7 +82,7 @@ The I18T package comes with a comprehensive set of features designed to make int
         	defaultLocale: 'en',
         	fallbackLocale: 'en',
         	translations: {
-        		'Hello_World': 'Hello World',
+        		Hello_World: 'Hello World',
         		// ... more key-value pairs
         	},
         })
