@@ -1,6 +1,7 @@
 {
 	"include": ["**/*"],
 	"exclude": ["node_modules", "build"],
+	"declaration": true,
 	"compilerOptions": {
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
