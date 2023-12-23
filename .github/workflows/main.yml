@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Test
 
 # Controls when the workflow will run
 on:
@@ -16,28 +16,21 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
     # This workflow contains a single job called "build"
-    build:
+    Test:
         # The type of runner that the job will run on
         runs-on: ubuntu-latest
-
-        strategy:
-            matrix:
-                node-version: [21.x]
 
         # Steps represent a sequence of tasks that will be executed as part of the job
         steps:
             # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-            - uses: actions/checkout@v3
-            - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v3
+            - uses: oven-sh/setup-bun@v1
               with:
-                  node-version: ${{ matrix.node-version }}
-                  cache: 'npm'
+                  bun-version: 'latest'
 
             # Install Node Modules
             - name: Install node_modules
-              run: npm install
+              run: bun install
 
-            # Run ESlint Check
-            - name: Run Tests Check
-              run: npm run test
+            # Run Tests
+            - name: Run Tests
+              run: bun run test
