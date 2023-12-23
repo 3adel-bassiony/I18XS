@@ -15,7 +15,8 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
     # This workflow contains a single job called "build"
-    build:
+    Test:
+        name: Test
         # The type of runner that the job will run on
         runs-on: ubuntu-latest
 
@@ -30,6 +31,6 @@ jobs:
             - name: Install node_modules
               run: bun install
 
-            # Run Tests Check
+            # Run Tests
             - name: Run Tests
               run: bun run test
