@@ -5,25 +5,25 @@ Getting up and running with I18T is a breeze. Choose your preferred package mana
 #### NPM
 
 ```bash
-npm i i18t
+npm i i18trans
 ```
 
 #### Bun
 
 ```bash
-bun i i18t
+bun i i18trans
 ```
 
 #### Yarn
 
 ```bash
-yarn add i18t
+yarn add i18trans
 ```
 
 #### Pnpm
 
 ```bash
-pnpm install i18t
+pnpm install i18trans
 ```
 
 # Usage

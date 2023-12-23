@@ -1,7 +1,7 @@
 {
-	"name": "i18t",
+	"name": "i18trans",
 	"version": "0.1.0",
-	"description": "A lightweight and simple package for i18n and localization for node.js and bun",
+	"description": "A lightweight and simple package for i18n and localization for node.js",
 	"main": "index.js",
 	"scripts": {
 		"clean": "rm -rf build && echo 'Done.'",
