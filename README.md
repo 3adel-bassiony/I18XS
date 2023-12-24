@@ -1,6 +1,6 @@
 # i18XS ( Beta )
 
-Discover the power of simplicity with I18XS, a remarkably compact and efficient i18n solution tailored for JavaScript and Node.js. Weighing in at just 3kb, this 'extra small' package is a game-changer for developers seeking to globalize their applications without the bulk and complexity of traditional i18n libraries. I18XS stands out as the ideal choice for modern, lightweight, and high-performance internationalization needs.
+Discover the power of simplicity with I18XS, a remarkably compact and efficient i18n solution tailored for JavaScript and Node.js. Weighing in at just 2kb, this 'extra small' package is a game-changer for developers seeking to globalize their applications without the bulk and complexity of traditional i18n libraries. I18XS stands out as the ideal choice for modern, lightweight, and high-performance internationalization needs.
 
 # Getting Started
 
