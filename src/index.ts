@@ -3,6 +3,7 @@ import fs from 'fs'
 type I18XSConfig = {
 	locale?: string
 	locales?: string[]
+	rtlLocales?: string[]
 	translations?: LocaleMessages | null
 	localesDir?: string | null
 }
@@ -16,12 +17,20 @@ type Data = Record<string, unknown>
 export default class I18XS {
 	locales: string[] = ['en']
 	locale: string = 'en'
+	rtlLocales: string[] = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug']
 	localesDir: string | null = null
 	translations: LocaleMessages = {}
 
-	constructor({ locales = ['en'], locale = 'en', localesDir = null, translations = null }: I18XSConfig) {
+	constructor({
+		locales = ['en'],
+		locale = 'en',
+		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
+		localesDir = null,
+		translations = null,
+	}: I18XSConfig) {
 		this.locales = locales
 		this.locale = locale
+		this.rtlLocales = rtlLocales
 		this.localesDir = localesDir
 
 		if (translations) {
@@ -45,19 +54,16 @@ export default class I18XS {
 		return this.locales
 	}
 
-	get isRTL(): boolean {
-		const rtlLanguages = ['ar']
-		return rtlLanguages.includes(this.locale)
+	get isLTR(): boolean {
+		return !this.rtlLocales.includes(this.locale)
 	}
 
-	get isLTR(): boolean {
-		const rtlLanguages = ['ar']
-		return rtlLanguages.includes(this.locale)
+	get isRTL(): boolean {
+		return this.rtlLocales.includes(this.locale)
 	}
 
 	changeLocale(locale: string): I18XS {
 		this.locale = locale
-		console.log('switching locale to "%s"', this.locale)
 
 		this.loadTranslations()
 		return this

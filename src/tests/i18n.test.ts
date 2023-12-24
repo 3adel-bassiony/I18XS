@@ -100,4 +100,19 @@ describe('I18XS', () => {
 
 		expect(i18xs.t('Key_Not_Exist')).toBe('This identifier does not exist')
 	})
+
+	test('It should check if the current locale is LTR or not', async () => {
+		const i18xs = new I18XS({ locale: 'en', locales: ['en', 'ar'] })
+		expect(i18xs.isLTR).toBe(true)
+	})
+
+	test('It should check if the current locale is RTL or not', async () => {
+		const i18xs = new I18XS({ locale: 'ar', locales: ['en', 'ar'] })
+		expect(i18xs.isRTL).toBe(true)
+	})
+
+	test('It should customize rtlLocales and check if the current locale is LTR or not', async () => {
+		const i18xs = new I18XS({ locale: 'he', locales: ['en', 'ar'], rtlLocales: ['ar'] })
+		expect(i18xs.isRTL).toBe(false)
+	})
 })
