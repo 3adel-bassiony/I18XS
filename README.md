@@ -44,10 +44,12 @@ Then create a new instance for i18xs and pass the configuration to it:
 
 ```javascript
 const i18xs = new I18XS({
-	defaultLocale: 'en',
+	supportedLocales: ['en'],
+	currentLocale: 'en',
 	fallbackLocale: 'en',
-	translations: {
-		Hello_World: 'Hello World',
+	rtlLocales: ['ar'],
+	localization: {
+		'Hello_World': 'Hello World',
 		// ... more key-value pairs
 	},
 })
@@ -79,12 +81,16 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
         ```javascript
         const i18xs = new I18XS({
-        	defaultLocale: 'en',
+        	supportedLocales: ['en'],
+        	currentLocale: 'en',
         	fallbackLocale: 'en',
-        	translations: {
-        		Hello_World: 'Hello World',
+        	rtlLocales: ['ar'],
+        	localization: {
+        		'Hello_World': 'Hello World',
         		// ... more key-value pairs
         	},
+        	localesDir: './path/to/locales/folder',
+        	enableDebug: true,
         })
         ```
 
@@ -103,46 +109,64 @@ The I18XS package comes with a comprehensive set of features designed to make in
         i18xs.t('Common.Foo.Bar.Hello_World') // -> Hello World
         ```
 
-    -   **Change Locale**: You can change the current locale for I18XS
+    -   **changeCurrentLocale**: Use this method to change the current locale of I18XS
 
         ```javascript
-        i18xs.changeLocale('es') // -> Update the current locale
+        i18xs.changeCurrentLocale('es') // -> Update the current locale
         ```
 
-    -   **Check If Key Exists:** Understand how to change locales dynamically.
+    -   **isCurrentLocale**: Use this method to check if the current locale is what you looking for or not.
 
         ```javascript
-        i18xs.hasKey('Hello_World') // -> True || False
+        i18xs.isCurrentLocale('es') // -> Update the current locale
         ```
 
-    -   **Get Default Locale**: Understand how to change locales dynamically.
+    -   **hasIdentifier** Check if a specific identifier exists in the localization object or not
 
         ```javascript
-        i18xs.defaultLocale // -> 'en'
+        i18xs.hasIdentifier('Hello_World') // -> True || False
         ```
 
-    -   **Get Current Locale**: Understand how to change locales dynamically.
-
-        ```javascript
-        i18xs.currentLocale // -> 'en'
-        ```
-
-    -   **Get Current Locale**: Understand how to change locales dynamically.
+    -   **supportedLocales**: Get the supported locale for the I18XS instance
 
         ```javascript
         i18xs.supportedLocales // -> ['en', 'ar']
         ```
 
-    -   **LTR Check**: You can check if the current locale is LTR or not
+    -   **currentLocale**: Understand how to change locales dynamically.
+
+        ```javascript
+        i18xs.currentLocale // -> 'en'
+        ```
+
+    -   **fallbackLocale**: Get the fallback locale to use it in case the current locale file is not found
+
+        ```javascript
+        i18xs.fallbackLocale // -> 'en'
+        ```
+
+    -   **localization** Get the localization object
+
+        ```javascript
+        i18xs.fallbackLocale // -> 'en'
+        ```
+
+    -   **isLTR**: Check if the current locale is Left-To-Right (LTR) or not
 
         ```javascript
         i18xs.isLTR // -> True || False
         ```
 
-    -   **RTL Check**: You can check if the current locale is RTL or not
+    -   **isRTL**: Check if the current locale is Right-To-Left (RTL) or not
 
         ```javascript
-        i18xs.isRTL // -> True || False
+        i18xs.isLTR // -> True || False
+        ```
+
+    -   **isDebugEnabled**: Check if the debug mode is enabled or not
+
+        ```javascript
+        i18xs.isDebugEnabled // -> True || False
         ```
 
 # Support and Questions

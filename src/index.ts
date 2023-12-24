@@ -1,85 +1,103 @@
 import fs from 'fs'
 
-type I18XSConfig = {
-	locale?: string
-	locales?: string[]
-	rtlLocales?: string[]
-	translations?: LocaleMessages | null
-	localesDir?: string | null
-}
-
-type LocaleMessages = {
-	[key: string]: string | LocaleMessages
-}
-
-type Data = Record<string, unknown>
+import { I18XSConfig } from './types/I18XSConfig'
+import { Localization } from './types/Localization'
+import { LocalizationData } from './types/LocalizationData'
 
 export default class I18XS {
-	locales: string[] = ['en']
-	locale: string = 'en'
-	rtlLocales: string[] = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug']
-	localesDir: string | null = null
-	translations: LocaleMessages = {}
+	protected _supportedLocales: string[] = ['en']
+	protected _currentLocale: string = 'en'
+	protected _fallbackLocale: string = 'en'
+	protected _rtlLocales: string[] = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug']
+	protected _localesDir: string | null = null
+	protected _localization: Localization = {}
+	protected _enableDebug: boolean = false
 
 	constructor({
-		locales = ['en'],
-		locale = 'en',
+		supportedLocales = ['en'],
+		currentLocale = 'en',
+		fallbackLocale = 'en',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
 		localesDir = null,
-		translations = null,
+		localization = null,
+		enableDebug = false,
 	}: I18XSConfig) {
-		this.locales = locales
-		this.locale = locale
-		this.rtlLocales = rtlLocales
-		this.localesDir = localesDir
+		this._supportedLocales = supportedLocales
+		this._currentLocale = currentLocale
+		this._fallbackLocale = fallbackLocale
+		this._rtlLocales = rtlLocales
+		this._localesDir = localesDir
+		this._enableDebug = enableDebug
 
-		if (translations) {
-			this.translations = translations
+		if (localization) {
+			this._localization = localization
 		}
 
-		if (this.localesDir) {
-			this.loadTranslations()
+		if (this._localesDir) {
+			this.loadLocalization()
 		}
-	}
-
-	get defaultLocale(): string {
-		return 'en'
-	}
-
-	get currentLocale(): string {
-		return this.locale
 	}
 
 	get supportedLocales(): string[] {
-		return this.locales
+		return this._supportedLocales
+	}
+
+	get currentLocale(): string {
+		return this._currentLocale
+	}
+
+	get fallbackLocale(): string {
+		return this._fallbackLocale
+	}
+
+	get localization(): Localization {
+		return this._localization
 	}
 
 	get isLTR(): boolean {
-		return !this.rtlLocales.includes(this.locale)
+		return !this._rtlLocales.includes(this._currentLocale)
 	}
 
 	get isRTL(): boolean {
-		return this.rtlLocales.includes(this.locale)
+		return this._rtlLocales.includes(this._currentLocale)
 	}
 
-	changeLocale(locale: string): I18XS {
-		this.locale = locale
+	get isDebugEnabled(): boolean {
+		return this._enableDebug
+	}
 
-		this.loadTranslations()
+	changeCurrentLocale(locale: string): I18XS {
+		if (!this._supportedLocales.includes(locale)) {
+			if (this._enableDebug) {
+				console.error(
+					`Locale ${locale} is not supported, please add it to the supported locales or change the current locale to a supported one`
+				)
+			}
+
+			return this
+		}
+
+		this._currentLocale = locale
+
+		if (this._enableDebug) {
+			console.debug(`Changed current locale to ${locale}`)
+		}
+
+		this.loadLocalization()
 		return this
 	}
 
-	isLocale(locale: string): boolean {
-		return this.locales.includes(locale)
+	isCurrentLocale(locale: string): boolean {
+		return this._supportedLocales.includes(locale)
 	}
 
-	hasKey(identifier: string): boolean {
+	hasIdentifier(identifier: string): boolean {
 		const keys = identifier.split('.')
-		let translations = this.translations
+		let localization = this._localization
 
 		for (const key of keys) {
-			if (Object.prototype.hasOwnProperty.call(translations, key) && typeof translations[key] === 'object') {
-				translations = translations[key] as LocaleMessages
+			if (Object.prototype.hasOwnProperty.call(localization, key) && typeof localization[key] === 'object') {
+				localization = localization[key] as Localization
 			} else {
 				return false
 			}
@@ -88,32 +106,64 @@ export default class I18XS {
 		return true
 	}
 
-	loadTranslations(): void {
-		try {
-			const fileContents = fs.readFileSync(`${this.localesDir}/${this.locale}.json`, 'utf8')
-
-			this.translations = JSON.parse(fileContents)
-		} catch (error) {
-			console.error({ 'Failed to load translations': error })
-		}
-	}
-
-	searchForTranslations(identifier: string): LocaleMessages {
+	searchForLocalization(identifier: string): Localization {
 		const keys = identifier.split('.')
-		let translations = this.translations
+		let localization = this._localization
 
 		for (const key of keys) {
-			if (Object.prototype.hasOwnProperty.call(translations, key) && typeof translations[key] === 'object') {
-				translations = translations[key] as LocaleMessages
+			if (Object.prototype.hasOwnProperty.call(localization, key) && typeof localization[key] === 'object') {
+				localization = localization[key] as Localization
 			} else {
-				return translations
+				return localization
 			}
 		}
 
-		return translations
+		return localization
 	}
 
-	formatMessage(identifier: string, data?: Data): string {
+	loadLocalization(): void {
+		try {
+			const filePath = `${this._localesDir}/${this._currentLocale}.json`
+			const fallbackFilePath = `${this._localesDir}/${this._fallbackLocale}.json`
+
+			let fileContents: string
+
+			if (fs.existsSync(filePath)) {
+				fileContents = fs.readFileSync(filePath, 'utf8')
+				this._localization = JSON.parse(fileContents)
+
+				if (this._enableDebug) {
+					console.debug({ 'Loaded localization': this._localization })
+				}
+			} else if (fs.existsSync(fallbackFilePath)) {
+				if (this._enableDebug) {
+					console.debug(
+						`Localization file not found for ${this._currentLocale}, using ${this._fallbackLocale} instead`
+					)
+				}
+
+				fileContents = fs.readFileSync(fallbackFilePath, 'utf8')
+				this._currentLocale = this._fallbackLocale
+				this._localization = JSON.parse(fileContents)
+
+				if (this._enableDebug) {
+					console.debug({ 'Loaded localization for fallback locale': this._localization })
+				}
+			} else {
+				if (this._enableDebug) {
+					console.debug(
+						`Localization file not found for both ${this._currentLocale} and ${this._fallbackLocale}`
+					)
+				}
+			}
+		} catch (error) {
+			if (this._enableDebug) {
+				console.error({ 'Failed to load localization': error })
+			}
+		}
+	}
+
+	formatMessage(identifier: string, data?: LocalizationData): string {
 		// If no identifier is given, return an empty string
 		if (!identifier) return ''
 
@@ -121,9 +171,9 @@ export default class I18XS {
 		const lastKey = keys[keys.length - 1]
 
 		// If the identifier does not exist, return a message to the user
-		if (!this.searchForTranslations(identifier)[lastKey]) return 'This identifier does not exist'
+		if (!this.searchForLocalization(identifier)[lastKey]) return 'This identifier does not exist'
 
-		const translationValue = this.searchForTranslations(identifier)[lastKey] as string
+		const translationValue = this.searchForLocalization(identifier)[lastKey] as string
 
 		return translationValue.replace(/{(\w+)}/g, function (_: string, key: string): string {
 			if (data && Object.prototype.hasOwnProperty.call(data, key)) {
@@ -134,7 +184,7 @@ export default class I18XS {
 		})
 	}
 
-	t(identifier: string, data?: Record<string, string>): string {
+	t(identifier: string, data?: LocalizationData): string {
 		return this.formatMessage(identifier, data)
 	}
 }

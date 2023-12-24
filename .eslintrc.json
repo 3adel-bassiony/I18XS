@@ -3,7 +3,7 @@
 	"plugins": ["@typescript-eslint", "eslint-plugin-import"],
 	"rules": {
 		"quotes": ["error", "single"],
-		"no-console": ["warn", { "allow": ["warn", "error"] }],
+		"no-console": ["warn", { "allow": ["debug", "warn", "error"] }],
 		"indent": ["error", "tab", { "SwitchCase": 1 }],
 		"prefer-const": "error",
 		"prefer-template": "error",
