@@ -135,9 +135,9 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
 # Support and Questions
 
-If you have any questions or need support while using I18XS, feel free to open an issue on our [GitHub repository](#link-to-repo) or reach out to the community for help.
+If you have any questions or need support while using I18XS, feel free to open an issue on our [GitHub repository](https://github.com/3adel-bassiony/I18XS/issues) or reach out to the community for help.
 
-For the complete and detailed guide, please refer to our [official documentation](#link-to-detailed-docs).
+For the complete and detailed guide, please refer to our [official documentation](#documentations).
 
 # Contribution
 
