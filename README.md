@@ -103,6 +103,18 @@ The I18XS package comes with a comprehensive set of features designed to make in
         i18xs.t('Common.Foo.Bar.Hello_World') // -> Hello World
         ```
 
+    -   **Change Locale**: You can change the current locale for I18XS
+
+        ```javascript
+        i18xs.changeLocale('es') // -> Update the current locale
+        ```
+
+    -   **Check If Key Exists:** Understand how to change locales dynamically.
+
+        ```javascript
+        i18xs.hasKey('Hello_World') // -> True || False
+        ```
+
     -   **Get Default Locale**: Understand how to change locales dynamically.
 
         ```javascript
@@ -121,16 +133,16 @@ The I18XS package comes with a comprehensive set of features designed to make in
         i18xs.supportedLocales // -> ['en', 'ar']
         ```
 
-    -   **Change Locale**: You can change the current locale for I18XS
+    -   **LTR Check**: You can check if the current locale is LTR or not
 
         ```javascript
-        i18xs.changeLocale('es') // -> Update the current locale
+        i18xs.isLTR // -> True || False
         ```
 
-    -   **Check If Key Exists:** Understand how to change locales dynamically.
+    -   **RTL Check**: You can check if the current locale is RTL or not
 
         ```javascript
-        i18xs.hasKey('Hello_World') // -> True || False
+        i18xs.isRTL // -> True || False
         ```
 
 # Support and Questions
