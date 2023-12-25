@@ -66,6 +66,33 @@ export default class I18XS {
 		return this._enableDebug
 	}
 
+	configure({
+		supportedLocales = ['en'],
+		currentLocale = 'en',
+		fallbackLocale = 'en',
+		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
+		localesDir = null,
+		localization = null,
+		enableDebug = false,
+	}: I18XSConfig): I18XS {
+		this._supportedLocales = supportedLocales
+		this._currentLocale = currentLocale
+		this._fallbackLocale = fallbackLocale
+		this._rtlLocales = rtlLocales
+		this._localesDir = localesDir
+		this._enableDebug = enableDebug
+
+		if (localization) {
+			this._localization = localization
+		}
+
+		if (this._localesDir) {
+			this.loadLocalization()
+		}
+
+		return this
+	}
+
 	changeCurrentLocale(locale: string): I18XS {
 		if (!this._supportedLocales.includes(locale)) {
 			if (this._enableDebug) {

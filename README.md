@@ -1,4 +1,4 @@
-# i18XS ( Beta )
+# i18XS
 
 Discover the power of simplicity with I18XS, a remarkably compact and efficient i18n solution tailored for JavaScript and Node.js. Weighing in at just 2kb, this 'extra small' package is a game-changer for developers seeking to globalize their applications without the bulk and complexity of traditional i18n libraries. I18XS stands out as the ideal choice for modern, lightweight, and high-performance internationalization needs.
 
@@ -120,9 +120,13 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
 -   ### Usage & Configuration
 
-    -   **Installation**: Refer to the [Getting Started](#getting-started) section for instructions on how to install I18XS using various package managers.
+    -   #### **Installation**:
 
-    -   **Initializing the Library:** Learn how to set up I18XS in your project.
+        Refer to the [Getting Started](#getting-started) section for instructions on how to install I18XS using various package managers.
+
+    -   #### **Initializing the Library:**
+
+        You can create a new instance of I18XS and pass the configuration for it directly like this example below:
 
         ```javascript
         const i18xs = new I18XS({
@@ -131,7 +135,26 @@ The I18XS package comes with a comprehensive set of features designed to make in
         	fallbackLocale: 'en',
         	rtlLocales: ['ar'],
         	localization: {
-        		Hello_World: 'Hello World',
+        		'Hello_World': 'Hello World',
+        		// ... more key-value pairs
+        	},
+        	localesDir: './path/to/locales/folder',
+        	enableDebug: true,
+        })
+        ```
+
+        Alternatively, you can split the creation of the new instance and the configuration, useful when split up into different modules for bootstrapping.
+
+        ```javascript
+        const i18xs = new I18XS()
+
+        i18xs.configure({
+        	supportedLocales: ['en'],
+        	currentLocale: 'en',
+        	fallbackLocale: 'en',
+        	rtlLocales: ['ar'],
+        	localization: {
+        		'Hello_World': 'Hello World',
         		// ... more key-value pairs
         	},
         	localesDir: './path/to/locales/folder',

@@ -19,6 +19,28 @@ describe('I18XS', () => {
 		expect(i18xs.localization).toEqual({ Hello_World: 'Hello World' })
 	})
 
+	test('It should reconfigure the I18XS instance', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localization: { Old_Hello_World: 'Hello World' },
+		})
+		i18xs.configure({
+			currentLocale: 'ar',
+			supportedLocales: ['ar', 'fr'],
+			localization: { Hello_World: 'مرحبا بالعالم' },
+			enableDebug: true,
+		})
+		expect(i18xs.currentLocale).toBe('ar')
+		expect(i18xs.supportedLocales).toEqual(['ar', 'fr'])
+		expect(i18xs.localization).toEqual({ Hello_World: 'مرحبا بالعالم' })
+		expect(i18xs.isRTL).toBe(true)
+		expect(i18xs.isLTR).toBe(false)
+		expect(i18xs.isDebugEnabled).toBe(true)
+		expect(i18xs.t('Hello_World')).toBe('مرحبا بالعالم')
+		expect(i18xs.t('Old_Hello_World')).toBe('Missing_Localization_Identifier')
+	})
+
 	test('It should get the fallback locale', async () => {
 		const i18xs = new I18XS({ currentLocale: 'en', supportedLocales: ['en', 'ar'] })
 		expect(i18xs.fallbackLocale).toBe('en')
