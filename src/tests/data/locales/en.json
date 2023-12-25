@@ -9,5 +9,11 @@
 		}
 	},
 	"Hello_World": "Hello World",
-	"Welcome_Message": "Welcome {name}"
+	"Welcome_Message": "Welcome {name}",
+	"Items_Count": {
+		"zero": "No items",
+		"one": "One item",
+		"two": "Two items",
+		"other": "{itemsCount} items"
+	}
 }

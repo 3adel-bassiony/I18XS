@@ -91,36 +91,6 @@ export default class I18XS {
 		return this._supportedLocales.includes(locale)
 	}
 
-	hasIdentifier(identifier: string): boolean {
-		const keys = identifier.split('.')
-		let localization = this._localization
-
-		for (const key of keys) {
-			if (Object.prototype.hasOwnProperty.call(localization, key) && typeof localization[key] === 'object') {
-				localization = localization[key] as Localization
-			} else {
-				return false
-			}
-		}
-
-		return true
-	}
-
-	searchForLocalization(identifier: string): Localization {
-		const keys = identifier.split('.')
-		let localization = this._localization
-
-		for (const key of keys) {
-			if (Object.prototype.hasOwnProperty.call(localization, key) && typeof localization[key] === 'object') {
-				localization = localization[key] as Localization
-			} else {
-				return localization
-			}
-		}
-
-		return localization
-	}
-
 	loadLocalization(): void {
 		try {
 			const filePath = `${this._localesDir}/${this._currentLocale}.json`
@@ -163,25 +133,51 @@ export default class I18XS {
 		}
 	}
 
+	hasIdentifier(identifier: string): boolean {
+		const message = this.searchForLocalization(identifier)
+
+		if (!message) return false
+
+		return true
+	}
+
+	replaceData(message: string, data?: LocalizationData): string {
+		if (!data) return message
+
+		return Object.keys(data).reduce((acc, key) => {
+			return acc.replace(new RegExp(`{${key}}`, 'g'), (data?.[key] as string).toString())
+		}, message)
+	}
+
+	searchForLocalization(identifier: string): string | Localization {
+		return identifier.split('.').reduce((acc: Localization | string, key: string): Localization | string => {
+			return typeof acc === 'object' ? acc[key] : acc
+		}, this._localization)
+	}
+
 	formatMessage(identifier: string, data?: LocalizationData): string {
-		// If no identifier is given, return an empty string
-		if (!identifier) return ''
+		const message = this.searchForLocalization(identifier)
 
-		const keys = identifier.split('.')
-		const lastKey = keys[keys.length - 1]
+		if (!message) return 'Missing_Localization_Identifier'
 
-		// If the identifier does not exist, return a message to the user
-		if (!this.searchForLocalization(identifier)[lastKey]) return 'This identifier does not exist'
+		// If message is an object, it's a pluralization case
+		if (typeof message === 'object') {
+			const count: number = data?.[Object.keys(data)[0]] as number
 
-		const translationValue = this.searchForLocalization(identifier)[lastKey] as string
-
-		return translationValue.replace(/{(\w+)}/g, function (_: string, key: string): string {
-			if (data && Object.prototype.hasOwnProperty.call(data, key)) {
-				return data[key] as string
-			} else {
-				return key
+			switch (count) {
+				case 0:
+					return message.zero as string
+				case 1:
+					return message.one as string
+				case 2:
+					return message.two as string
+				default:
+					return this.replaceData(message.other as string, data)
 			}
-		})
+		}
+
+		// Otherwise, it's a simple string
+		return this.replaceData(message as string, data)
 	}
 
 	t(identifier: string, data?: LocalizationData): string {

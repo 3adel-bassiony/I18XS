@@ -49,7 +49,7 @@ const i18xs = new I18XS({
 	fallbackLocale: 'en',
 	rtlLocales: ['ar'],
 	localization: {
-		'Hello_World': 'Hello World',
+		Hello_World: 'Hello World',
 		// ... more key-value pairs
 	},
 })
@@ -69,9 +69,54 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
     -   **Simple Locale Management**: Easily switch between languages in your application.
     -   **Dynamic Content Loading**: Load language resources as needed, without bloating your application.
-    -   **Pluralization and Formatting**: Advanced support for plural forms and number formatting. ( ⏳ Coming Soon )
+    -   **Pluralization and Formatting**: Advanced support for plural forms and number formatting.
     -   **Customization and Extensibility**: Extend or customize functionalities to fit your application’s needs.
     -   **LTR & RTL Detection**: Detect LTR & RTL for easy access and usage
+
+-   ### Localization Files
+
+    In multi-language applications, managing localization files is crucial. I18XS simplifies this process. Follow these guidelines to set up and utilize localization files effectively:
+
+    -   #### File Structure
+
+        For each language supported by your application, create a corresponding JSON file within a locales directory. These files should be named using the locale's identifier, such as en.json for English, ar.json for Arabic, etc. Each file contains key-value pairs for localized strings.
+
+        Example structure for en.json:
+
+        ```json
+        {
+        	"common": {
+        		"Success": "Success",
+        		"Failed": "Failed"
+        	},
+        	"validation": {
+        		"string": {
+        			"required": "This field is required"
+        		}
+        	},
+        	"Hello_World": "Hello World",
+        	"Welcome_Message": "Welcome {name}",
+        	"Items_Count": {
+        		"zero": "No items",
+        		"one": "One item",
+        		"two": "Two items",
+        		"other": "{itemsCount} items"
+        	}
+        	// ... more key-value pairs
+        }
+        ```
+
+    -   #### Performance and Usage
+
+        -   **Efficient Loading:** I18XS optimizes performance by loading only the current locale's JSON file. This approach ensures faster load times and reduces memory usage.
+        -   **Singular File per Locale:** Each locale is represented by a single JSON file. This structure facilitates easier management and collaboration, such as sending files to translators or sharing with team members.
+        -   **Nested Objects Support:** The library supports nested objects, allowing you to logically group related localizations for better organization.
+        -   **Pluralization:** I18XS handles plural localization, allowing different translations based on quantity (e.g., zero, one, two, other).
+
+    -   #### Integration
+
+        -   **Single Language Setup:** If your application only uses one language, you can pass the localization object directly to the I18XS configuration.
+        -   **Multiple Languages:** For applications supporting multiple languages, store the localization files in the locales directory. Configure I18XS with the directory path, and it will dynamically load the appropriate file based on the current or changed locale.
 
 -   ### Usage & Configuration
 
@@ -86,7 +131,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
         	fallbackLocale: 'en',
         	rtlLocales: ['ar'],
         	localization: {
-        		'Hello_World': 'Hello World',
+        		Hello_World: 'Hello World',
         		// ... more key-value pairs
         	},
         	localesDir: './path/to/locales/folder',
@@ -125,6 +170,19 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
         ```javascript
         i18xs.hasIdentifier('Hello_World') // -> True || False
+        ```
+
+    -   **replaceData** Replace the variables in the data object with the variables placeholder in the message
+
+        ```javascript
+        i18xs.replaceData('Welcome {name}', { name: 'John Doe' }) // -> 'Welcome John Doe'
+        ```
+
+    -   **searchForLocalization** Search for a localization with identifier and it will return a string message or the plural object for localization
+
+        ```javascript
+        i18xs.searchForLocalization('Hello_World') // -> 'Hello World'
+        i18xs.searchForLocalization('Items_Count') // -> {"zero": "No items", "one": "One item", "two": "Two items", "other": "{itemsCount} items" }
         ```
 
     -   **supportedLocales**: Get the supported locale for the I18XS instance

@@ -9,5 +9,11 @@
 		}
 	},
 	"Hello_World": "مرحبًا بالعالم",
-	"Welcome_Message": "مرحبًا {name}"
+	"Welcome_Message": "مرحبًا {name}",
+	"Items_Count": {
+		"zero": "لا توجد عناصر",
+		"one": "عنصر واحد",
+		"two": "عنصران",
+		"other": "{itemsCount} عناصر"
+	}
 }
