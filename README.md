@@ -27,25 +27,21 @@ Discover I18XS, a remarkably efficient 3kb i18n solution for JavaScript and Node
 Getting up and running with I18XS is a breeze. Choose your preferred package manager from the options below and follow the simple installation steps:
 
 #### NPM
-
 ```bash
 npm i i18xs
 ```
 
 #### Bun
-
 ```bash
 bun i i18xs
 ```
 
 #### Yarn
-
 ```bash
 yarn add i18xs
 ```
 
 #### Pnpm
-
 ```bash
 pnpm install i18xs
 ```
