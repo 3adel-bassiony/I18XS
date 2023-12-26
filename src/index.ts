@@ -21,6 +21,16 @@ export default class I18XS {
 	protected _fallbackLocale: string = 'en'
 
 	/**
+	 * Indicates whether the missing identifier message should be shown.
+	 */
+	protected _showMissingIdentifierMessage: boolean = false
+
+	/**
+	 * The message to be displayed when a localization identifier is missing.
+	 */
+	protected _missingIdentifierMessage: string = 'Missing_Localization_Identifier'
+
+	/**
 	 * Array of locales that use right-to-left (RTL) writing direction.
 	 */
 	protected _rtlLocales: string[] = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug']
@@ -42,13 +52,15 @@ export default class I18XS {
 
 	/**
 	 * Creates an instance of the I18XS class.
-	 * @param {I18XSConfig} config - The configuration object for the I18XS instance.
+	 * @param {I18XSConfig} config - The configuration options for the I18XS instance.
 	 * @example
 	 * const i18n = new I18XS({
 	 *   supportedLocales: ['en', 'fr'],
 	 *   currentLocale: 'en',
 	 *   fallbackLocale: 'en',
-	 *   rtlLocales: ['ar', 'he'],
+	 *   showMissingIdentifierMessage: true,
+	 *   missingIdentifierMessage: 'Missing_Localization_Identifier',
+	 *   rtlLocales: ['ar', 'he', 'fa'],
 	 *   localesDir: './locales',
 	 *   localization: {
 	 *     en: {
@@ -67,6 +79,8 @@ export default class I18XS {
 		supportedLocales = ['en'],
 		currentLocale = 'en',
 		fallbackLocale = 'en',
+		showMissingIdentifierMessage = false,
+		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
 		localesDir = null,
 		localization = null,
@@ -75,6 +89,8 @@ export default class I18XS {
 		this._supportedLocales = supportedLocales
 		this._currentLocale = currentLocale
 		this._fallbackLocale = fallbackLocale
+		this._showMissingIdentifierMessage = showMissingIdentifierMessage
+		this._missingIdentifierMessage = missingIdentifierMessage
 		this._rtlLocales = rtlLocales
 		this._localesDir = localesDir
 		this._enableDebug = enableDebug
@@ -194,6 +210,8 @@ export default class I18XS {
 	 *   supportedLocales: ['en', 'fr'],
 	 *   currentLocale: 'en',
 	 *   fallbackLocale: 'en',
+	 * 	 showMissingIdentifierMessage: true,
+	 *	 missingIdentifierMessage: 'Missing_Localization_Identifier',
 	 *   rtlLocales: ['ar', 'he', 'fa'],
 	 *   localesDir: '/path/to/locales',
 	 *   localization: {
@@ -213,6 +231,8 @@ export default class I18XS {
 		supportedLocales = ['en'],
 		currentLocale = 'en',
 		fallbackLocale = 'en',
+		showMissingIdentifierMessage = false,
+		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
 		localesDir = null,
 		localization = null,
@@ -221,6 +241,8 @@ export default class I18XS {
 		this._supportedLocales = supportedLocales
 		this._currentLocale = currentLocale
 		this._fallbackLocale = fallbackLocale
+		this._showMissingIdentifierMessage = showMissingIdentifierMessage
+		this._missingIdentifierMessage = missingIdentifierMessage
 		this._rtlLocales = rtlLocales
 		this._localesDir = localesDir
 		this._enableDebug = enableDebug
@@ -394,24 +416,28 @@ export default class I18XS {
 	}
 
 	/**
-	 * Formats a localized message based on the given identifier and data.
-	 * If the message is not found, it returns 'Missing_Localization_Identifier'.
-	 * If the message is an object, it handles pluralization based on the count in the data object.
-	 * Otherwise, it simply replaces the data in the message and returns the formatted string.
-	 *
-	 * @param identifier - The identifier of the message to be localized.
+	 * Formats a localized message based on the provided identifier and data.
+	 * If the message is not found, it returns the identifier itself.
+	 * If the message is a pluralization case, it selects the appropriate form based on the count in the data object.
+	 * @param identifier - The identifier of the message to be formatted.
 	 * @param data - Optional data object used for replacing placeholders in the message.
-	 * @returns The formatted localized message.
+	 * @returns The formatted message.
 	 *
 	 * @example
 	 * const i18n = new I18nService();
-	 * const message = i18n.formatMessage('welcome_message', { name: 'John' });
+	 * const message = i18n.formatMessage('welcome', { name: 'John' });
 	 * console.log(message); // Output: "Welcome, John!"
 	 */
 	formatMessage(identifier: string, data?: LocalizationData): string {
 		const message = this.searchForLocalization(identifier)
 
-		if (!message) return 'Missing_Localization_Identifier'
+		if (!message) {
+			if (this._showMissingIdentifierMessage) {
+				return this._missingIdentifierMessage
+			}
+
+			return identifier
+		}
 
 		// If message is an object, it's a pluralization case
 		if (typeof message === 'object') {

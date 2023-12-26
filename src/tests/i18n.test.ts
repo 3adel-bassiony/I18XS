@@ -38,7 +38,7 @@ describe('I18XS', () => {
 		expect(i18xs.isLTR).toBe(false)
 		expect(i18xs.isDebugEnabled).toBe(true)
 		expect(i18xs.t('Hello_World')).toBe('مرحبا بالعالم')
-		expect(i18xs.t('Old_Hello_World')).toBe('Missing_Localization_Identifier')
+		expect(i18xs.t('Old_Hello_World')).toBe('Old_Hello_World')
 	})
 
 	test('It should get the fallback locale', async () => {
@@ -244,6 +244,13 @@ describe('I18XS', () => {
 	test('It should return a fallback message if the key not found', async () => {
 		const dir = `${process.cwd()}/src/tests/data/locales`
 		const i18xs = new I18XS({ currentLocale: 'en', localesDir: dir })
+
+		expect(i18xs.t('Key_Not_Exist')).toBe('Key_Not_Exist')
+	})
+
+	test('It should return a fallback message if the key not found and show missing identifier is true', async () => {
+		const dir = `${process.cwd()}/src/tests/data/locales`
+		const i18xs = new I18XS({ currentLocale: 'en', localesDir: dir, showMissingIdentifierMessage: true })
 
 		expect(i18xs.t('Key_Not_Exist')).toBe('Missing_Localization_Identifier')
 	})
