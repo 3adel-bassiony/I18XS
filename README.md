@@ -145,7 +145,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
     -   #### **Installation**:
 
-        Refer to the [Getting Started](#getting-started) section for instructions on how to install I18XS using various package managers.
+        Refer to the [Installation](#installation) section for instructions on how to install I18XS using various package managers.
 
     -   #### **Initializing the Library:**
 
