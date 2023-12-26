@@ -1,8 +1,28 @@
 # i18XS
 
-Discover the power of simplicity with I18XS, a remarkably compact and efficient i18n solution tailored for JavaScript and Node.js. Weighing in at just 2kb, this 'extra small' package is a game-changer for developers seeking to globalize their applications without the bulk and complexity of traditional i18n libraries. I18XS stands out as the ideal choice for modern, lightweight, and high-performance internationalization needs.
+![npm](https://img.shields.io/npm/v/i18xs)
+![npm bundle size](https://img.shields.io/bundlephobia/min/i18xs)
+![npm package minimized gzipped size (select exports)](https://img.shields.io/bundlejs/size/i18xs)
+![gh-workflow-image](https://img.shields.io/github/actions/workflow/status/3adel-bassiony/i18xs/main.yml)
+![NPM](https://img.shields.io/npm/l/i18xs)
 
-# Getting Started
+Discover I18XS, a remarkably efficient 3kb i18n solution for JavaScript and Node.js, ideal for developers prioritizing performance and simplicity. Written in TypeScript, it offers seamless integration for both TypeScript and JavaScript projects. Its compact size belies its powerful functionality, making it perfect for lightweight, modern applications. With ESM compatibility, I18XS aligns with contemporary development practices, ensuring its utility in a range of projects from small-scale to complex.
+
+&nbsp;
+
+## Quick Navigation
+
+1. [Installation](#installation)
+2. [Usage](#usage)
+3. [Documentation](#documentation)
+4. [Support and Questions](#installation)
+5. [Contribution](#contribution)
+6. [Guidelines for Contributions](#guidelines-for-contributions)
+7. [License](#license)
+
+&nbsp;
+
+# Installation
 
 Getting up and running with I18XS is a breeze. Choose your preferred package manager from the options below and follow the simple installation steps:
 
@@ -29,6 +49,8 @@ yarn add i18xs
 ```bash
 pnpm install i18xs
 ```
+
+&nbsp;
 
 # Usage
 
@@ -60,6 +82,8 @@ And then you can use it like this:
 ```javascript
 const localizedMessage = i18xs.t('Hello_World') // -> Hello World
 ```
+
+&nbsp;
 
 # Documentation
 
@@ -102,7 +126,6 @@ The I18XS package comes with a comprehensive set of features designed to make in
         		"two": "Two items",
         		"other": "{itemsCount} items"
         	}
-        	// ... more key-value pairs
         }
         ```
 
@@ -135,7 +158,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
         	fallbackLocale: 'en',
         	rtlLocales: ['ar'],
         	localization: {
-        		'Hello_World': 'Hello World',
+        		Hello_World: 'Hello World',
         		// ... more key-value pairs
         	},
         	localesDir: './path/to/locales/folder',
@@ -154,7 +177,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
         	fallbackLocale: 'en',
         	rtlLocales: ['ar'],
         	localization: {
-        		'Hello_World': 'Hello World',
+        		Hello_World: 'Hello World',
         		// ... more key-value pairs
         	},
         	localesDir: './path/to/locales/folder',
@@ -250,11 +273,15 @@ The I18XS package comes with a comprehensive set of features designed to make in
         i18xs.isDebugEnabled // -> True || False
         ```
 
+&nbsp;
+
 # Support and Questions
 
 If you have any questions or need support while using I18XS, feel free to open an issue on our [GitHub repository](https://github.com/3adel-bassiony/I18XS/issues) or reach out to the community for help.
 
-For the complete and detailed guide, please refer to our [official documentation](#documentations).
+For the complete and detailed guide, please refer to our [official documentation](#documentation).
+
+&nbsp;
 
 # Contribution
 
@@ -268,6 +295,8 @@ There are many ways you can contribute to I18XS, even if you're not a technical 
 -   **Documentation:** Good documentation is key to any project. If you see something unclear or missing, feel free to submit a pull request.
 -   **Spread the Word:** Share I18XS with your network and let others know about it.
 
+&nbsp;
+
 # Guidelines for Contributions
 
 Ensure you use a consistent coding style with the rest of the project.
@@ -275,6 +304,8 @@ Write clear, readable, and concise code.
 Add unit tests for new features to ensure reliability and maintainability.
 Update the README or documentation with details of changes, this includes new environment variables, exposed ports, useful file locations, and container parameters.
 Increase the version numbers in any example files and the README to the new version that this Pull Request would represent.
+
+&nbsp;
 
 # License
 
