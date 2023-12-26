@@ -71,7 +71,7 @@ const i18xs = new I18XS({
 	fallbackLocale: 'en',
 	rtlLocales: ['ar'],
 	localization: {
-		Hello_World: 'Hello World',
+		'Hello_World': 'Hello World',
 		// ... more key-value pairs
 	},
 })
@@ -104,6 +104,15 @@ The I18XS package comes with a comprehensive set of features designed to make in
     -   #### File Structure
 
         For each language supported by your application, create a corresponding JSON file within a locales directory. These files should be named using the locale's identifier, such as en.json for English, ar.json for Arabic, etc. Each file contains key-value pairs for localized strings.
+
+        Example structure for the locales folder:
+
+        ```
+        locales
+            ├── en.json
+            ├── fr.json
+            └── ar.json
+        ```
 
         Example structure for en.json:
 
@@ -158,7 +167,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
         	fallbackLocale: 'en',
         	rtlLocales: ['ar'],
         	localization: {
-        		Hello_World: 'Hello World',
+        		'Hello_World': 'Hello World',
         		// ... more key-value pairs
         	},
         	localesDir: './path/to/locales/folder',
@@ -177,7 +186,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
         	fallbackLocale: 'en',
         	rtlLocales: ['ar'],
         	localization: {
-        		Hello_World: 'Hello World',
+        		'Hello_World': 'Hello World',
         		// ... more key-value pairs
         	},
         	localesDir: './path/to/locales/folder',
