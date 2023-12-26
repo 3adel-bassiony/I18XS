@@ -165,6 +165,8 @@ The I18XS package comes with a comprehensive set of features designed to make in
         	supportedLocales: ['en'],
         	currentLocale: 'en',
         	fallbackLocale: 'en',
+            showMissingIdentifierMessage: false,
+		    missingIdentifierMessage: 'Missing_Localization_Identifier',
         	rtlLocales: ['ar'],
         	localization: {
         		'Hello_World': 'Hello World',
@@ -184,6 +186,8 @@ The I18XS package comes with a comprehensive set of features designed to make in
         	supportedLocales: ['en'],
         	currentLocale: 'en',
         	fallbackLocale: 'en',
+            showMissingIdentifierMessage: false,
+		    missingIdentifierMessage: 'Missing_Localization_Identifier',
         	rtlLocales: ['ar'],
         	localization: {
         		'Hello_World': 'Hello World',
