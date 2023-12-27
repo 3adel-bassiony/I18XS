@@ -264,16 +264,16 @@ The I18XS package comes with a comprehensive set of features designed to make in
         i18xs.fallbackLocale // -> 'en'
         ```
 
-    -   **isLTR**: Check if the current locale is Left-To-Right (LTR) or not
+    -   **isCurrentLocaleLTR**: Check if the current locale is Left-To-Right (LTR) or not
 
         ```javascript
-        i18xs.isLTR // -> True || False
+        i18xs.isCurrentLocaleLTR // -> True || False
         ```
 
-    -   **isRTL**: Check if the current locale is Right-To-Left (RTL) or not
+    -   **isCurrentLocaleRTL**: Check if the current locale is Right-To-Left (RTL) or not
 
         ```javascript
-        i18xs.isLTR // -> True || False
+        i18xs.isCurrentLocaleLTR // -> True || False
         ```
 
     -   **isDebugEnabled**: Check if the debug mode is enabled or not

@@ -34,8 +34,8 @@ describe('I18XS', () => {
 		expect(i18xs.currentLocale).toBe('ar')
 		expect(i18xs.supportedLocales).toEqual(['ar', 'fr'])
 		expect(i18xs.localization).toEqual({ Hello_World: 'مرحبا بالعالم' })
-		expect(i18xs.isRTL).toBe(true)
-		expect(i18xs.isLTR).toBe(false)
+		expect(i18xs.isCurrentLocaleRTL).toBe(true)
+		expect(i18xs.isCurrentLocaleLTR).toBe(false)
 		expect(i18xs.isDebugEnabled).toBe(true)
 		expect(i18xs.t('Hello_World')).toBe('مرحبا بالعالم')
 		expect(i18xs.t('Old_Hello_World')).toBe('Old_Hello_World')
@@ -257,17 +257,17 @@ describe('I18XS', () => {
 
 	test('It should check if the current locale is LTR or not', async () => {
 		const i18xs = new I18XS({ currentLocale: 'en', supportedLocales: ['en', 'ar'] })
-		expect(i18xs.isLTR).toBe(true)
+		expect(i18xs.isCurrentLocaleLTR).toBe(true)
 	})
 
 	test('It should check if the current locale is RTL or not', async () => {
 		const i18xs = new I18XS({ currentLocale: 'ar', supportedLocales: ['en', 'ar'] })
-		expect(i18xs.isRTL).toBe(true)
+		expect(i18xs.isCurrentLocaleRTL).toBe(true)
 	})
 
 	test('It should customize rtlLocales and check if the current locale is LTR or not', async () => {
 		const i18xs = new I18XS({ currentLocale: 'he', supportedLocales: ['en', 'ar'], rtlLocales: ['ar'] })
-		expect(i18xs.isRTL).toBe(false)
+		expect(i18xs.isCurrentLocaleRTL).toBe(false)
 	})
 
 	// test('It should enable debug mode', async () => {

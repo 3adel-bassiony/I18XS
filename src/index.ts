@@ -162,11 +162,11 @@ export default class I18XS {
 	 * @example
 	 * const i18n = new I18nService();
 	 * i18n.setLocale('en');
-	 * console.log(i18n.isLTR); // Output: true
+	 * console.log(i18n.isCurrentLocaleLTR); // Output: true
 	 * i18n.setLocale('ar');
-	 * console.log(i18n.isLTR); // Output: false
+	 * console.log(i18n.isCurrentLocaleLTR); // Output: false
 	 */
-	get isLTR(): boolean {
+	get isCurrentLocaleLTR(): boolean {
 		return !this._rtlLocales.includes(this._currentLocale)
 	}
 
@@ -176,11 +176,11 @@ export default class I18XS {
 	 * @example
 	 * const i18n = new I18nService();
 	 * i18n.setLocale('ar');
-	 * console.log(i18n.isRTL); // Output: true
+	 * console.log(i18n.isCurrentLocaleRTL); // Output: true
 	 * i18n.setLocale('en');
-	 * console.log(i18n.isRTL); // Output: false
+	 * console.log(i18n.isCurrentLocaleRTL); // Output: false
 	 */
-	get isRTL(): boolean {
+	get isCurrentLocaleRTL(): boolean {
 		return this._rtlLocales.includes(this._currentLocale)
 	}
 
