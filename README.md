@@ -169,7 +169,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
         		// ... more key-value pairs
         	},
         	localesDir: './path/to/locales/folder',
-        	enableDebug: true,
+        	showLogs: true,
         })
         ```
 
@@ -190,7 +190,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
         		// ... more key-value pairs
         	},
         	localesDir: './path/to/locales/folder',
-        	enableDebug: true,
+        	showLogs: true,
         })
         ```
 

@@ -9,5 +9,5 @@ export type I18XSConfig = {
 	rtlLocales?: string[]
 	localization?: Localization | null
 	localesDir?: string | null
-	enableDebug?: boolean
+	showLogs?: boolean
 }

@@ -29,7 +29,7 @@ describe('I18XS', () => {
 			currentLocale: 'ar',
 			supportedLocales: ['ar', 'fr'],
 			localization: { Hello_World: 'مرحبا بالعالم' },
-			enableDebug: true,
+			showLogs: true,
 		})
 		expect(i18xs.currentLocale).toBe('ar')
 		expect(i18xs.supportedLocales).toEqual(['ar', 'fr'])
@@ -271,7 +271,7 @@ describe('I18XS', () => {
 	})
 
 	// test('It should enable debug mode', async () => {
-	// 	const i18xs = new I18XS({ currentLocale: 'he', supportedLocales: ['en', 'ar'], enableDebug: true })
+	// 	const i18xs = new I18XS({ currentLocale: 'he', supportedLocales: ['en', 'ar'], showLogs: true })
 	// 	expect(i18xs.isDebugEnabled).toBe(true)
 	// 	i18xs.changeCurrentLocale('ar')
 	// 	const consoleSpy = vi.spyOn(console, 'debug')

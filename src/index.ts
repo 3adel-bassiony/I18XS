@@ -48,7 +48,7 @@ export default class I18XS {
 	/**
 	 * Indicates whether debug mode is enabled.
 	 */
-	protected _enableDebug: boolean = false
+	protected _showLogs: boolean = false
 
 	/**
 	 * Creates an instance of the I18XS class.
@@ -72,7 +72,7 @@ export default class I18XS {
 	 *       farewell: 'Au revoir'
 	 *     }
 	 *   },
-	 *   enableDebug: true
+	 *   showLogs: true
 	 * });
 	 */
 	constructor({
@@ -84,7 +84,7 @@ export default class I18XS {
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
 		localesDir = null,
 		localization = null,
-		enableDebug = false,
+		showLogs = false,
 	}: I18XSConfig) {
 		this._supportedLocales = supportedLocales
 		this._currentLocale = currentLocale
@@ -93,7 +93,7 @@ export default class I18XS {
 		this._missingIdentifierMessage = missingIdentifierMessage
 		this._rtlLocales = rtlLocales
 		this._localesDir = localesDir
-		this._enableDebug = enableDebug
+		this._showLogs = showLogs
 
 		if (localization) {
 			this._localization = localization
@@ -196,7 +196,7 @@ export default class I18XS {
 	 * }
 	 */
 	get isDebugEnabled(): boolean {
-		return this._enableDebug
+		return this._showLogs
 	}
 
 	/**
@@ -224,7 +224,7 @@ export default class I18XS {
 	 *       farewell: 'Au revoir'
 	 *     }
 	 *   },
-	 *   enableDebug: true
+	 *   showLogs: true
 	 * });
 	 */
 	configure({
@@ -236,7 +236,7 @@ export default class I18XS {
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
 		localesDir = null,
 		localization = null,
-		enableDebug = false,
+		showLogs = false,
 	}: I18XSConfig): I18XS {
 		this._supportedLocales = supportedLocales
 		this._currentLocale = currentLocale
@@ -245,7 +245,7 @@ export default class I18XS {
 		this._missingIdentifierMessage = missingIdentifierMessage
 		this._rtlLocales = rtlLocales
 		this._localesDir = localesDir
-		this._enableDebug = enableDebug
+		this._showLogs = showLogs
 
 		if (localization) {
 			this._localization = localization
@@ -270,7 +270,7 @@ export default class I18XS {
 	 */
 	changeCurrentLocale(locale: string): I18XS {
 		if (!this._supportedLocales.includes(locale)) {
-			if (this._enableDebug) {
+			if (this._showLogs) {
 				console.error(
 					`Locale ${locale} is not supported, please add it to the supported locales or change the current locale to a supported one`
 				)
@@ -281,7 +281,7 @@ export default class I18XS {
 
 		this._currentLocale = locale
 
-		if (this._enableDebug) {
+		if (this._showLogs) {
 			console.debug(`Changed current locale to ${locale}`)
 		}
 
@@ -323,11 +323,11 @@ export default class I18XS {
 				fileContents = fs.readFileSync(filePath, 'utf8')
 				this._localization = JSON.parse(fileContents)
 
-				if (this._enableDebug) {
+				if (this._showLogs) {
 					console.debug({ 'Loaded localization': this._localization })
 				}
 			} else if (fs.existsSync(fallbackFilePath)) {
-				if (this._enableDebug) {
+				if (this._showLogs) {
 					console.debug(
 						`Localization file not found for ${this._currentLocale}, using ${this._fallbackLocale} instead`
 					)
@@ -337,18 +337,18 @@ export default class I18XS {
 				this._currentLocale = this._fallbackLocale
 				this._localization = JSON.parse(fileContents)
 
-				if (this._enableDebug) {
+				if (this._showLogs) {
 					console.debug({ 'Loaded localization for fallback locale': this._localization })
 				}
 			} else {
-				if (this._enableDebug) {
+				if (this._showLogs) {
 					console.debug(
 						`Localization file not found for both ${this._currentLocale} and ${this._fallbackLocale}`
 					)
 				}
 			}
 		} catch (error) {
-			if (this._enableDebug) {
+			if (this._showLogs) {
 				console.error({ 'Failed to load localization': error })
 			}
 		}
