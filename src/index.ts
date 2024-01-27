@@ -54,7 +54,7 @@ export default class I18XS {
 	 * Creates an instance of the I18XS class.
 	 * @param {I18XSConfig} config - The configuration options for the I18XS instance.
 	 * @example
-	 * const i18n = new I18XS({
+	 * const i18xs = new I18XS({
 	 *   supportedLocales: ['en', 'fr'],
 	 *   currentLocale: 'en',
 	 *   fallbackLocale: 'en',
@@ -108,8 +108,8 @@ export default class I18XS {
 	 * Gets the supported locales.
 	 * @returns An array of supported locales.
 	 * @example
-	 * const i18n = new I18n();
-	 * const locales = i18n.supportedLocales;
+	 * const i18xs = new I18XS();
+	 * const locales = i18xs.supportedLocales;
 	 * console.log(locales); // ['en', 'fr', 'de']
 	 */
 	get supportedLocales(): string[] {
@@ -121,8 +121,8 @@ export default class I18XS {
 	 *
 	 * @returns {string} The current locale.
 	 * @example
-	 * const i18n = new I18n();
-	 * const locale = i18n.currentLocale; // Returns the current locale, e.g. "en"
+	 * const i18xs = new I18XS();
+	 * const locale = i18xs.currentLocale; // Returns the current locale, e.g. "en"
 	 */
 	get currentLocale(): string {
 		return this._currentLocale
@@ -134,8 +134,8 @@ export default class I18XS {
 	 * @returns {string} The fallback locale.
 	 *
 	 * @example
-	 * const i18n = new I18XS();
-	 * const fallbackLocale = i18n.fallbackLocale; // Returns the fallback locale as a string.
+	 * const i18xs = new I18XS();
+	 * const fallbackLocale = i18xs.fallbackLocale; // Returns the fallback locale as a string.
 	 */
 	get fallbackLocale(): string {
 		return this._fallbackLocale
@@ -148,8 +148,8 @@ export default class I18XS {
 	 *
 	 * @example
 	 * // Usage
-	 * const i18n = new I18XS();
-	 * const localization = i18n.localization;
+	 * const i18xs = new I18XS();
+	 * const localization = i18xs.localization;
 	 * console.log(localization); // Output: { ... } (the localization object)
 	 */
 	get localization(): Localization {
@@ -160,11 +160,11 @@ export default class I18XS {
 	 * Determines if the current locale is left-to-right (LTR).
 	 * @returns {boolean} True if the current locale is LTR, false otherwise.
 	 * @example
-	 * const i18n = new I18nService();
-	 * i18n.setLocale('en');
-	 * console.log(i18n.isCurrentLocaleLTR); // Output: true
-	 * i18n.setLocale('ar');
-	 * console.log(i18n.isCurrentLocaleLTR); // Output: false
+	 * const i18xs = new I18XS();
+	 * i18xs.setLocale('en');
+	 * console.log(i18xs.isCurrentLocaleLTR); // Output: true
+	 * i18xs.setLocale('ar');
+	 * console.log(i18xs.isCurrentLocaleLTR); // Output: false
 	 */
 	get isCurrentLocaleLTR(): boolean {
 		return !this._rtlLocales.includes(this._currentLocale)
@@ -174,11 +174,11 @@ export default class I18XS {
 	 * Determines if the current locale is right-to-left (RTL).
 	 * @returns {boolean} True if the current locale is RTL, false otherwise.
 	 * @example
-	 * const i18n = new I18nService();
-	 * i18n.setLocale('ar');
-	 * console.log(i18n.isCurrentLocaleRTL); // Output: true
-	 * i18n.setLocale('en');
-	 * console.log(i18n.isCurrentLocaleRTL); // Output: false
+	 * const i18xs = new I18XS();
+	 * i18xs.setLocale('ar');
+	 * console.log(i18xs.isCurrentLocaleRTL); // Output: true
+	 * i18xs.setLocale('en');
+	 * console.log(i18xs.isCurrentLocaleRTL); // Output: false
 	 */
 	get isCurrentLocaleRTL(): boolean {
 		return this._rtlLocales.includes(this._currentLocale)
@@ -188,8 +188,8 @@ export default class I18XS {
 	 * Gets the debug mode status.
 	 * @returns {boolean} The debug mode status.
 	 * @example
-	 * const i18n = new I18n();
-	 * if (i18n.isShowLogs) {
+	 * const i18xs = new I18XS();
+	 * if (i18xs.isShowLogs) {
 	 *   console.log('Debug mode is enabled');
 	 * } else {
 	 *   console.log('Debug mode is disabled');
@@ -265,8 +265,8 @@ export default class I18XS {
 	 * @returns {I18XS} - The updated I18XS instance.
 	 *
 	 * @example
-	 * const i18n = new I18XS();
-	 * i18n.changeCurrentLocale('en');
+	 * const i18xs = new I18XS();
+	 * i18xs.changeCurrentLocale('en');
 	 */
 	changeCurrentLocale(locale: string): I18XS {
 		if (!this._supportedLocales.includes(locale)) {
@@ -296,8 +296,8 @@ export default class I18XS {
 	 * @returns True if the locale is supported, false otherwise.
 	 *
 	 * @example
-	 * const i18n = new I18nService();
-	 * const isSupported = i18n.isCurrentLocale('en');
+	 * const i18xs = new I18XS();
+	 * const isSupported = i18xs.isCurrentLocale('en');
 	 * console.log(isSupported); // Output: true
 	 */
 	isCurrentLocale(locale: string): boolean {
@@ -309,8 +309,8 @@ export default class I18XS {
 	 * If the localization file for the current locale is not found, it falls back to the fallback locale.
 	 * If neither the current locale nor the fallback locale files are found, no localization is loaded.
 	 * @example
-	 * const i18n = new I18nService();
-	 * i18n.loadLocalization();
+	 * const i18xs = new I18XS();
+	 * i18xs.loadLocalization();
 	 */
 	loadLocalization(): void {
 		try {
@@ -361,8 +361,8 @@ export default class I18XS {
 	 * @returns `true` if the identifier exists, `false` otherwise.
 	 *
 	 * @example
-	 * const i18n = new I18nService();
-	 * const exists = i18n.hasIdentifier('welcome_message');
+	 * const i18xs = new I18XS();
+	 * const exists = i18xs.hasIdentifier('welcome_message');
 	 * console.log(exists); // Output: true
 	 */
 	hasIdentifier(identifier: string): boolean {
@@ -381,10 +381,10 @@ export default class I18XS {
 	 * @returns The message with placeholders replaced by corresponding values from the data object.
 	 *
 	 * @example
-	 * const i18n = new I18nService();
+	 * const i18xs = new I18XS();
 	 * const message = "Hello, {name}! You have {count} new messages.";
 	 * const data = { name: "John", count: 5 };
-	 * const result = i18n.replaceData(message, data);
+	 * const result = i18xs.replaceData(message, data);
 	 * // result: "Hello, John! You have 5 new messages."
 	 */
 	replaceData(message: string, data?: LocalizationData): string {
@@ -424,8 +424,8 @@ export default class I18XS {
 	 * @returns The formatted message.
 	 *
 	 * @example
-	 * const i18n = new I18nService();
-	 * const message = i18n.formatMessage('welcome', { name: 'John' });
+	 * const i18xs = new I18XS();
+	 * const message = i18xs.formatMessage('welcome', { name: 'John' });
 	 * console.log(message); // Output: "Welcome, John!"
 	 */
 	formatMessage(identifier: string, data?: LocalizationData): string {
