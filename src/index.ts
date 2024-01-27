@@ -189,13 +189,13 @@ export default class I18XS {
 	 * @returns {boolean} The debug mode status.
 	 * @example
 	 * const i18n = new I18n();
-	 * if (i18n.isDebugEnabled) {
+	 * if (i18n.isShowLogs) {
 	 *   console.log('Debug mode is enabled');
 	 * } else {
 	 *   console.log('Debug mode is disabled');
 	 * }
 	 */
-	get isDebugEnabled(): boolean {
+	get isShowLogs(): boolean {
 		return this._showLogs
 	}
 

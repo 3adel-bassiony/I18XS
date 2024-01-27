@@ -36,7 +36,7 @@ describe('I18XS', () => {
 		expect(i18xs.localization).toEqual({ Hello_World: 'مرحبا بالعالم' })
 		expect(i18xs.isCurrentLocaleRTL).toBe(true)
 		expect(i18xs.isCurrentLocaleLTR).toBe(false)
-		expect(i18xs.isDebugEnabled).toBe(true)
+		expect(i18xs.isShowLogs).toBe(true)
 		expect(i18xs.t('Hello_World')).toBe('مرحبا بالعالم')
 		expect(i18xs.t('Old_Hello_World')).toBe('Old_Hello_World')
 	})
@@ -272,7 +272,7 @@ describe('I18XS', () => {
 
 	// test('It should enable debug mode', async () => {
 	// 	const i18xs = new I18XS({ currentLocale: 'he', supportedLocales: ['en', 'ar'], showLogs: true })
-	// 	expect(i18xs.isDebugEnabled).toBe(true)
+	// 	expect(i18xs.isShowLogs).toBe(true)
 	// 	i18xs.changeCurrentLocale('ar')
 	// 	const consoleSpy = vi.spyOn(console, 'debug')
 	// 	expect(consoleSpy).toHaveBeenCalledWith('Changed current locale to ar')

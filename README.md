@@ -276,10 +276,10 @@ The I18XS package comes with a comprehensive set of features designed to make in
         i18xs.isCurrentLocaleLTR // -> True || False
         ```
 
-    -   **isDebugEnabled**: Check if the debug mode is enabled or not
+    -   **isShowLogs**: Check if the debug mode is enabled or not
 
         ```javascript
-        i18xs.isDebugEnabled // -> True || False
+        i18xs.isShowLogs // -> True || False
         ```
 
 &nbsp;
