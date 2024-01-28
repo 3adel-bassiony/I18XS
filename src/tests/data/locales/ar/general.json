@@ -1,13 +1,4 @@
 {
-	"common": {
-		"Success": "نجاح",
-		"Failed": "فشل"
-	},
-	"validation": {
-		"string": {
-			"required": "هذا الحقل مطلوب"
-		}
-	},
 	"Hello_World": "مرحبًا بالعالم",
 	"Welcome_Message": "مرحبًا {name}",
 	"Items_Count": {
@@ -15,5 +6,11 @@
 		"one": "عنصر واحد",
 		"two": "عنصران",
 		"other": "{itemsCount} عناصر"
+	},
+	"Multiple_Items_Count": {
+		"zero": "لا توجد عناصر",
+		"one": "عنصر واحد",
+		"two": "عنصران",
+		"other": "{itemsCount} عناصر, {resourcesCount} عناصر"
 	}
 }

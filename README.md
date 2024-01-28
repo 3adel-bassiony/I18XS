@@ -27,21 +27,25 @@ Discover I18XS, a remarkably efficient 3kb i18n solution for JavaScript and Node
 Getting up and running with I18XS is a breeze. Choose your preferred package manager from the options below and follow the simple installation steps:
 
 #### NPM
+
 ```bash
 npm i i18xs
 ```
 
 #### Bun
+
 ```bash
 bun i i18xs
 ```
 
 #### Yarn
+
 ```bash
 yarn add i18xs
 ```
 
 #### Pnpm
+
 ```bash
 pnpm install i18xs
 ```
@@ -54,28 +58,24 @@ Once you have installed I18XS, integrating it into your project is straightforwa
 
 First, import I18XS into your JavaScript or TypeScript file:
 
-```javascript
+```typescript
 import I18XS from 'i18xs'
 ```
 
 Then create a new instance for i18xs and pass the configuration to it:
 
-```javascript
+```typescript
 const i18xs = new I18XS({
 	supportedLocales: ['en'],
 	currentLocale: 'en',
 	fallbackLocale: 'en',
 	rtlLocales: ['ar'],
-	localization: {
-		'Hello_World': 'Hello World',
-		// ... more key-value pairs
-	},
 })
 ```
 
 And then you can use it like this:
 
-```javascript
+```typescript
 const localizedMessage = i18xs.t('Hello_World') // -> Hello World
 ```
 
@@ -99,30 +99,32 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
     -   #### File Structure
 
-        For each language supported by your application, create a corresponding JSON file within a locales directory. These files should be named using the locale's identifier, such as en.json for English, ar.json for Arabic, etc. Each file contains key-value pairs for localized strings.
+        For each language supported by your application, create a folder for it in locales directory. These folders should be named using the locale's identifier, such as `en` for English, `ar` for Arabic, etc. Each file contains key-value pairs for localized strings.
 
         Example structure for the locales folder:
 
         ```
-        locales
-            ├── en.json
-            ├── fr.json
-            └── ar.json
+        /locales
+            ├── /en
+            │    ├── common.json
+            │    ├── validation.json
+            │    └── more JSON files...
+            │
+            ├── /fr
+            │    ├── common.json
+            │    ├── validation.json
+            │    └── more JSON files...
+            │
+            └── /ar
+                 ├── common.json
+                 ├── validation.json
+                 └── more JSON files...
         ```
 
-        Example structure for en.json:
+        Example structure for `common.json`:
 
         ```json
         {
-        	"common": {
-        		"Success": "Success",
-        		"Failed": "Failed"
-        	},
-        	"validation": {
-        		"string": {
-        			"required": "This field is required"
-        		}
-        	},
         	"Hello_World": "Hello World",
         	"Welcome_Message": "Welcome {name}",
         	"Items_Count": {
@@ -137,7 +139,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
     -   #### Performance and Usage
 
         -   **Efficient Loading:** I18XS optimizes performance by loading only the current locale's JSON file. This approach ensures faster load times and reduces memory usage.
-        -   **Singular File per Locale:** Each locale is represented by a single JSON file. This structure facilitates easier management and collaboration, such as sending files to translators or sharing with team members.
+        -   **Multiple Files per Locale:** Each locale is represented by a folder and inside it multiple JSON files. This structure facilitates easier management and collaboration, also significantly enhancing performance and making it read faster.
         -   **Nested Objects Support:** The library supports nested objects, allowing you to logically group related localizations for better organization.
         -   **Pluralization:** I18XS handles plural localization, allowing different translations based on quantity (e.g., zero, one, two, other).
 
@@ -156,18 +158,14 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
         You can create a new instance of I18XS and pass the configuration for it directly like this example below:
 
-        ```javascript
+        ```typescript
         const i18xs = new I18XS({
         	supportedLocales: ['en'],
         	currentLocale: 'en',
         	fallbackLocale: 'en',
-            showMissingIdentifierMessage: false,
-		    missingIdentifierMessage: 'Missing_Localization_Identifier',
+        	showMissingIdentifierMessage: false,
+        	missingIdentifierMessage: 'Missing_Localization_Identifier',
         	rtlLocales: ['ar'],
-        	localization: {
-        		'Hello_World': 'Hello World',
-        		// ... more key-value pairs
-        	},
         	localesDir: './path/to/locales/folder',
         	showLogs: true,
         })
@@ -175,20 +173,16 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
         Alternatively, you can split the creation of the new instance and the configuration, useful when split up into different modules for bootstrapping.
 
-        ```javascript
+        ```typescript
         const i18xs = new I18XS()
 
         i18xs.configure({
         	supportedLocales: ['en'],
         	currentLocale: 'en',
         	fallbackLocale: 'en',
-            showMissingIdentifierMessage: false,
-		    missingIdentifierMessage: 'Missing_Localization_Identifier',
+        	showMissingIdentifierMessage: false,
+        	missingIdentifierMessage: 'Missing_Localization_Identifier',
         	rtlLocales: ['ar'],
-        	localization: {
-        		'Hello_World': 'Hello World',
-        		// ... more key-value pairs
-        	},
         	localesDir: './path/to/locales/folder',
         	showLogs: true,
         })
@@ -196,89 +190,89 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
 -   ### Methods/Properties
 
-    -   **Localize a message**: You can localize a message using one of those methods
+    -   **Localize a message**: You can localize a message by using one of those methods, the localization methods takes an identifier that contains the file name and the key you want to localize, for example, if the file name `common.json` and the message is `Hello_World` you can use it like this:
 
-        ```javascript
-        i18xs.t('Hello_World') // -> Hello World
-        i18xs.formatMessage('Hello_World') // -> Hello World
+        ```typescript
+        i18xs.t('common.Hello_World') // -> Hello World
+        i18xs.formatMessage('common.Hello_World') // -> Hello World
         ```
 
     -   **Localize a message in nested objects**: You can localize a message using one of those methods
 
-        ```javascript
-        i18xs.t('Common.Foo.Bar.Hello_World') // -> Hello World
+        ```typescript
+        i18xs.t('common.Foo.Bar.Hello_World') // -> Hello World
         ```
 
     -   **changeCurrentLocale**: Use this method to change the current locale of I18XS
 
-        ```javascript
+        ```typescript
         i18xs.changeCurrentLocale('es') // -> Update the current locale
         ```
 
     -   **isCurrentLocale**: Use this method to check if the current locale is what you looking for or not.
 
-        ```javascript
+        ```typescript
         i18xs.isCurrentLocale('es') // -> Update the current locale
         ```
 
     -   **hasIdentifier** Check if a specific identifier exists in the localization object or not
 
-        ```javascript
+        ```typescript
         i18xs.hasIdentifier('Hello_World') // -> True || False
         ```
 
     -   **replaceData** Replace the variables in the data object with the variables placeholder in the message
 
-        ```javascript
+        ```typescript
         i18xs.replaceData('Welcome {name}', { name: 'John Doe' }) // -> 'Welcome John Doe'
         ```
 
     -   **searchForLocalization** Search for a localization with identifier and it will return a string message or the plural object for localization
 
-        ```javascript
-        i18xs.searchForLocalization('Hello_World') // -> 'Hello World'
-        i18xs.searchForLocalization('Items_Count') // -> {"zero": "No items", "one": "One item", "two": "Two items", "other": "{itemsCount} items" }
+        ```typescript
+        i18xs.searchForLocalization('common.Hello_World') // -> 'Hello World'
+        i18xs.searchForLocalization('common.Items_Count') // -> {"zero": "No items", "one": "One item", "two": "Two items", "other": "{itemsCount} items" }
         ```
 
     -   **supportedLocales**: Get the supported locale for the I18XS instance
 
-        ```javascript
+        ```typescript
         i18xs.supportedLocales // -> ['en', 'ar']
         ```
 
     -   **currentLocale**: Understand how to change locales dynamically.
 
-        ```javascript
+        ```typescript
         i18xs.currentLocale // -> 'en'
         ```
 
     -   **fallbackLocale**: Get the fallback locale to use it in case the current locale file is not found
 
-        ```javascript
+        ```typescript
         i18xs.fallbackLocale // -> 'en'
         ```
 
     -   **localization** Get the localization object
 
-        ```javascript
+        ```typescript
         i18xs.fallbackLocale // -> 'en'
         ```
 
     -   **isCurrentLocaleLTR**: Check if the current locale is Left-To-Right (LTR) or not
 
-        ```javascript
+        ```typescript
         i18xs.isCurrentLocaleLTR // -> True || False
         ```
 
     -   **isCurrentLocaleRTL**: Check if the current locale is Right-To-Left (RTL) or not
 
-        ```javascript
+        ```typescript
         i18xs.isCurrentLocaleLTR // -> True || False
         ```
 
     -   **isShowLogs**: Check if the debug mode is enabled or not
 
-        ```javascript
+        ```typescript
         i18xs.isShowLogs // -> True || False
         ```
 

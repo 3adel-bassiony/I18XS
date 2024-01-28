@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import { I18XSConfig } from './types/I18XSConfig'
+import { Config } from './types/Config'
 import { Localization } from './types/Localization'
 import { LocalizationData } from './types/LocalizationData'
 
@@ -38,12 +38,7 @@ export default class I18XS {
 	/**
 	 * The directory path where the locales are stored.
 	 */
-	protected _localesDir: string | null = null
-
-	/**
-	 * The localization object used for storing localized strings.
-	 */
-	protected _localization: Localization = {}
+	protected _localesDir: string
 
 	/**
 	 * Indicates whether debug mode is enabled.
@@ -51,28 +46,18 @@ export default class I18XS {
 	protected _showLogs: boolean = false
 
 	/**
-	 * Creates an instance of the I18XS class.
-	 * @param {I18XSConfig} config - The configuration options for the I18XS instance.
+	 * Initializes a new instance of the I18XS class.
+	 * @param {Config} config - The configuration options for I18XS.
 	 * @example
-	 * const i18xs = new I18XS({
+	 * const i18n = new I18XS({
 	 *   supportedLocales: ['en', 'fr'],
 	 *   currentLocale: 'en',
 	 *   fallbackLocale: 'en',
 	 *   showMissingIdentifierMessage: true,
 	 *   missingIdentifierMessage: 'Missing_Localization_Identifier',
 	 *   rtlLocales: ['ar', 'he', 'fa'],
-	 *   localesDir: './locales',
-	 *   localization: {
-	 *     en: {
-	 *       greeting: 'Hello',
-	 *       farewell: 'Goodbye'
-	 *     },
-	 *     fr: {
-	 *       greeting: 'Bonjour',
-	 *       farewell: 'Au revoir'
-	 *     }
-	 *   },
-	 *   showLogs: true
+	 *   localesDir: `${process.cwd()}/src/locales`,
+	 *   showLogs: true,
 	 * });
 	 */
 	constructor({
@@ -82,26 +67,19 @@ export default class I18XS {
 		showMissingIdentifierMessage = false,
 		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
-		localesDir = null,
-		localization = null,
+		localesDir = `${process.cwd()}/src/locales`,
 		showLogs = false,
-	}: I18XSConfig) {
-		this._supportedLocales = supportedLocales
-		this._currentLocale = currentLocale
-		this._fallbackLocale = fallbackLocale
-		this._showMissingIdentifierMessage = showMissingIdentifierMessage
-		this._missingIdentifierMessage = missingIdentifierMessage
-		this._rtlLocales = rtlLocales
-		this._localesDir = localesDir
-		this._showLogs = showLogs
-
-		if (localization) {
-			this._localization = localization
-		}
-
-		if (this._localesDir) {
-			this.loadLocalization()
-		}
+	}: Config) {
+		this.configure({
+			localesDir,
+			supportedLocales,
+			currentLocale,
+			fallbackLocale,
+			showMissingIdentifierMessage,
+			missingIdentifierMessage,
+			rtlLocales,
+			showLogs,
+		})
 	}
 
 	/**
@@ -139,21 +117,6 @@ export default class I18XS {
 	 */
 	get fallbackLocale(): string {
 		return this._fallbackLocale
-	}
-
-	/**
-	 * Gets the localization object.
-	 *
-	 * @returns The localization object.
-	 *
-	 * @example
-	 * // Usage
-	 * const i18xs = new I18XS();
-	 * const localization = i18xs.localization;
-	 * console.log(localization); // Output: { ... } (the localization object)
-	 */
-	get localization(): Localization {
-		return this._localization
 	}
 
 	/**
@@ -202,8 +165,7 @@ export default class I18XS {
 	/**
 	 * Configures the I18XS library with the provided options.
 	 *
-	 * @param {I18XSConfig} options - The configuration options for I18XS.
-	 * @returns {I18XS} - The configured I18XS instance.
+	 * @param {Config} options - The configuration options for I18XS.
 	 *
 	 * @example
 	 * configure({
@@ -228,34 +190,110 @@ export default class I18XS {
 	 * });
 	 */
 	configure({
+		localesDir = this._localesDir,
 		supportedLocales = ['en'],
 		currentLocale = 'en',
 		fallbackLocale = 'en',
 		showMissingIdentifierMessage = false,
 		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
-		localesDir = null,
-		localization = null,
 		showLogs = false,
-	}: I18XSConfig): I18XS {
+	}: Config): I18XS {
+		this._localesDir = localesDir
 		this._supportedLocales = supportedLocales
 		this._currentLocale = currentLocale
 		this._fallbackLocale = fallbackLocale
 		this._showMissingIdentifierMessage = showMissingIdentifierMessage
 		this._missingIdentifierMessage = missingIdentifierMessage
 		this._rtlLocales = rtlLocales
-		this._localesDir = localesDir
 		this._showLogs = showLogs
 
-		if (localization) {
-			this._localization = localization
-		}
-
-		if (this._localesDir) {
-			this.loadLocalization()
-		}
-
 		return this
+	}
+
+	/**
+	 * Splits the identifier into a file name and an array of keys.
+	 * @param identifier - The identifier to split.
+	 * @returns An object containing the file name and an array of keys.
+	 * @example
+	 * // Returns { fileName: 'example', keys: ['key1', 'key2'] }
+	 * splitIdentifier('example.key1.key2');
+	 */
+	private splitIdentifier(identifier: string): { fileName: string; keys: string[] } {
+		const keys = identifier.split('.')
+
+		return {
+			fileName: keys?.[0],
+			keys: keys?.slice(1),
+		}
+	}
+
+	/**
+	 * Loads the content of a localization file.
+	 * @param filePath - The path to the localization file.
+	 * @returns The parsed localization object, or undefined if the file cannot be loaded.
+	 * @example
+	 * const filePath = '/path/to/localization.json';
+	 * const localization = loadFileContent(filePath);
+	 * if (localization) {
+	 *   // Use the localization object
+	 * } else {
+	 *   // Handle the case when the file cannot be loaded
+	 * }
+	 */
+	private loadFileContent(filePath: string): Localization | undefined {
+		try {
+			const fileContents = fs.readFileSync(filePath, 'utf8')
+			const localization = JSON.parse(fileContents)
+
+			if (this._showLogs) {
+				console.debug({ message: 'Loaded file content', filePath, localization })
+			}
+
+			return localization
+		} catch (error) {
+			if (this._showLogs) {
+				console.error({ message: 'Failed to load localization file content', error })
+			}
+		}
+	}
+
+	/**
+	 * Loads the localization file based on the given file name.
+	 * Returns the loaded Localization object if the file exists, otherwise returns undefined.
+	 *
+	 * @param fileName - The name of the localization file (without the file extension).
+	 * @returns The loaded Localization object or undefined.
+	 *
+	 * @example
+	 * const localization = i18n.loadLocalization('messages');
+	 * if (localization) {
+	 *   console.log('Localization loaded:', localization);
+	 * } else {
+	 *   console.log('Localization file not found.');
+	 * }
+	 */
+	private loadLocalization(fileName: string): Localization | undefined {
+		const filePath = `${this._localesDir}/${this._currentLocale}/${fileName}.json`
+		const fallbackFilePath = `${this._localesDir}/${this._fallbackLocale}/${fileName}.json`
+
+		try {
+			if (fs.existsSync(filePath)) {
+				return this.loadFileContent(filePath)
+			} else if (fs.existsSync(fallbackFilePath)) {
+				return this.loadFileContent(fallbackFilePath)
+			} else {
+				if (this._showLogs) {
+					console.debug(
+						`Localization file not found for both ${this._currentLocale} and ${this._fallbackLocale}`
+					)
+				}
+			}
+		} catch (error) {
+			if (this._showLogs) {
+				console.error({ message: 'Failed to load localization', error })
+			}
+		}
 	}
 
 	/**
@@ -285,7 +323,6 @@ export default class I18XS {
 			console.debug(`Changed current locale to ${locale}`)
 		}
 
-		this.loadLocalization()
 		return this
 	}
 
@@ -305,56 +342,6 @@ export default class I18XS {
 	}
 
 	/**
-	 * Loads the localization file based on the current locale.
-	 * If the localization file for the current locale is not found, it falls back to the fallback locale.
-	 * If neither the current locale nor the fallback locale files are found, no localization is loaded.
-	 * @example
-	 * const i18xs = new I18XS();
-	 * i18xs.loadLocalization();
-	 */
-	loadLocalization(): void {
-		try {
-			const filePath = `${this._localesDir}/${this._currentLocale}.json`
-			const fallbackFilePath = `${this._localesDir}/${this._fallbackLocale}.json`
-
-			let fileContents: string
-
-			if (fs.existsSync(filePath)) {
-				fileContents = fs.readFileSync(filePath, 'utf8')
-				this._localization = JSON.parse(fileContents)
-
-				if (this._showLogs) {
-					console.debug({ 'Loaded localization': this._localization })
-				}
-			} else if (fs.existsSync(fallbackFilePath)) {
-				if (this._showLogs) {
-					console.debug(
-						`Localization file not found for ${this._currentLocale}, using ${this._fallbackLocale} instead`
-					)
-				}
-
-				fileContents = fs.readFileSync(fallbackFilePath, 'utf8')
-				this._currentLocale = this._fallbackLocale
-				this._localization = JSON.parse(fileContents)
-
-				if (this._showLogs) {
-					console.debug({ 'Loaded localization for fallback locale': this._localization })
-				}
-			} else {
-				if (this._showLogs) {
-					console.debug(
-						`Localization file not found for both ${this._currentLocale} and ${this._fallbackLocale}`
-					)
-				}
-			}
-		} catch (error) {
-			if (this._showLogs) {
-				console.error({ 'Failed to load localization': error })
-			}
-		}
-	}
-
-	/**
 	 * Checks if the given identifier exists in the localization messages.
 	 *
 	 * @param identifier - The identifier to search for.
@@ -366,7 +353,15 @@ export default class I18XS {
 	 * console.log(exists); // Output: true
 	 */
 	hasIdentifier(identifier: string): boolean {
-		const message = this.searchForLocalization(identifier)
+		const { fileName } = this.splitIdentifier(identifier)
+
+		if (!fileName) return false
+
+		const localization = this.loadLocalization(fileName)
+
+		if (!localization) return false
+
+		const message = this.searchForLocalization(identifier, localization)
 
 		if (!message) return false
 
@@ -409,10 +404,13 @@ export default class I18XS {
 	 * // Returns 'greeting.message'
 	 * searchForLocalization('greeting.message.not.found')
 	 */
-	searchForLocalization(identifier: string): string | Localization {
-		return identifier.split('.').reduce((acc: Localization | string, key: string): Localization | string => {
-			return typeof acc === 'object' ? acc[key] : acc
-		}, this._localization)
+	searchForLocalization(identifier: string, localization: Localization): string | Localization {
+		return this.splitIdentifier(identifier).keys.reduce(
+			(acc: Localization | string, key: string): Localization | string => {
+				return typeof acc === 'object' ? acc[key] : acc
+			},
+			localization
+		)
 	}
 
 	/**
@@ -429,7 +427,27 @@ export default class I18XS {
 	 * console.log(message); // Output: "Welcome, John!"
 	 */
 	formatMessage(identifier: string, data?: LocalizationData): string {
-		const message = this.searchForLocalization(identifier)
+		const { fileName } = this.splitIdentifier(identifier)
+
+		if (!fileName) {
+			if (this._showMissingIdentifierMessage) {
+				return this._missingIdentifierMessage
+			}
+
+			return identifier
+		}
+
+		const localization = this.loadLocalization(fileName)
+
+		if (!localization) {
+			if (this._showMissingIdentifierMessage) {
+				return this._missingIdentifierMessage
+			}
+
+			return identifier
+		}
+
+		const message = this.searchForLocalization(identifier, localization)
 
 		if (!message) {
 			if (this._showMissingIdentifierMessage) {

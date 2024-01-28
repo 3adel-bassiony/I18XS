@@ -1,13 +1,4 @@
 {
-	"common": {
-		"Success": "Success",
-		"Failed": "Failed"
-	},
-	"validation": {
-		"string": {
-			"required": "This field is required"
-		}
-	},
 	"Hello_World": "Hello World",
 	"Welcome_Message": "Welcome {name}",
 	"Items_Count": {
@@ -15,5 +6,11 @@
 		"one": "One item",
 		"two": "Two items",
 		"other": "{itemsCount} items"
+	},
+	"Multiple_Items_Count": {
+		"zero": "No items",
+		"one": "One item",
+		"two": "Two items",
+		"other": "{itemsCount} items, {resourcesCount} resources"
 	}
 }
