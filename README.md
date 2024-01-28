@@ -76,7 +76,7 @@ const i18xs = new I18XS({
 And then you can use it like this:
 
 ```typescript
-const localizedMessage = i18xs.t('Hello_World') // -> Hello World
+const localizedMessage = i18xs.t('common.Hello_World') // -> Hello World
 ```
 
 &nbsp;
@@ -145,7 +145,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
     -   #### Integration
 
-        -   **Single Language Setup:** If your application only uses one language, you can pass the localization object directly to the I18XS configuration.
+        -   **Single Language Setup:** If your application only uses one language, you can create a single JSON file called `common.json` and use it directly.
         -   **Multiple Languages:** For applications supporting multiple languages, store the localization files in the locales directory. Configure I18XS with the directory path, and it will dynamically load the appropriate file based on the current or changed locale.
 
 -   ### Usage & Configuration
