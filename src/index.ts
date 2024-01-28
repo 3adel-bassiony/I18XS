@@ -176,16 +176,6 @@ export default class I18XS {
 	 *	 missingIdentifierMessage: 'Missing_Localization_Identifier',
 	 *   rtlLocales: ['ar', 'he', 'fa'],
 	 *   localesDir: '/path/to/locales',
-	 *   localization: {
-	 *     en: {
-	 *       greeting: 'Hello',
-	 *       farewell: 'Goodbye'
-	 *     },
-	 *     fr: {
-	 *       greeting: 'Bonjour',
-	 *       farewell: 'Au revoir'
-	 *     }
-	 *   },
 	 *   showLogs: true
 	 * });
 	 */
