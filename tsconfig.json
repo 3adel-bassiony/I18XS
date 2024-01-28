@@ -18,6 +18,7 @@
 		"rootDir": "./src",
 		// "allowImportingTsExtensions": true,
 		// "noEmit": false,
+		"removeComments": true,
 		"composite": true,
 		"paths": {
 			"@/*": ["./src/*"]
