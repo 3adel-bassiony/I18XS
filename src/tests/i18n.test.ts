@@ -20,6 +20,28 @@ describe('I18XS Initialization', () => {
 		expect(i18xs.supportedLocales).toEqual(['en', 'ar'])
 	})
 
+	it('Should create a new instance for I18XS with configuration and passing localizations', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					general: {
+						Hello_World: 'Hello World',
+					},
+				},
+				ar: {
+					general: {
+						Hello_World: 'مرحبًا بالعالم',
+					},
+				},
+			},
+		})
+		expect(i18xs.currentLocale).toBe('en')
+		expect(i18xs.supportedLocales).toEqual(['en', 'ar'])
+		expect(i18xs.t('general.Hello_World')).toBe('Hello World')
+	})
+
 	it('Should create a new instance for I18XS and configure it next', async () => {
 		const i18xs = new I18XS({
 			currentLocale: 'en',

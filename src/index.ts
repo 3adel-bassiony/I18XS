@@ -46,6 +46,11 @@ export default class I18XS {
 	protected _showLogs: boolean = false
 
 	/**
+	 * The localizations stored in memory.
+	 */
+	protected _localizations: Record<string, Record<string, Localization>> = {}
+
+	/**
 	 * Initializes a new instance of the I18XS class.
 	 * @param {Config} config - The configuration options for I18XS.
 	 * @example
@@ -58,6 +63,7 @@ export default class I18XS {
 	 *   rtlLocales: ['ar', 'he', 'fa'],
 	 *   localesDir: `${process.cwd()}/src/locales`,
 	 *   showLogs: true,
+	 *   localizations: {},
 	 * });
 	 */
 	constructor({
@@ -69,6 +75,7 @@ export default class I18XS {
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
 		localesDir = `${process.cwd()}/src/locales`,
 		showLogs = false,
+		localizations = {},
 	}: Config) {
 		this.configure({
 			localesDir,
@@ -79,6 +86,7 @@ export default class I18XS {
 			missingIdentifierMessage,
 			rtlLocales,
 			showLogs,
+			localizations,
 		})
 	}
 
@@ -188,6 +196,7 @@ export default class I18XS {
 		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
 		showLogs = false,
+		localizations = {},
 	}: Config): I18XS {
 		this._localesDir = localesDir
 		this._supportedLocales = supportedLocales
@@ -197,6 +206,7 @@ export default class I18XS {
 		this._missingIdentifierMessage = missingIdentifierMessage
 		this._rtlLocales = rtlLocales
 		this._showLogs = showLogs
+		this._localizations = localizations
 
 		return this
 	}
@@ -264,6 +274,14 @@ export default class I18XS {
 	 * }
 	 */
 	private loadLocalization(fileName: string): Localization | undefined {
+		// First check in-memory localizations
+		if (this._localizations[this._currentLocale]?.[fileName]) {
+			return this._localizations[this._currentLocale][fileName]
+		} else if (this._localizations[this._fallbackLocale]?.[fileName]) {
+			return this._localizations[this._fallbackLocale][fileName]
+		}
+
+		// If not found in memory, try loading from files
 		const filePath = `${this._localesDir}/${this._currentLocale}/${fileName}.json`
 		const fallbackFilePath = `${this._localesDir}/${this._fallbackLocale}/${fileName}.json`
 

@@ -1,13 +1,40 @@
 {
-	"extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
-	"plugins": ["@typescript-eslint", "eslint-plugin-import"],
+	"extends": [
+		"eslint:recommended",
+		"plugin:@typescript-eslint/recommended"
+	],
+	"plugins": [
+		"@typescript-eslint",
+		"eslint-plugin-import"
+	],
 	"rules": {
-		"quotes": ["error", "single"],
-		"no-console": ["warn", { "allow": ["debug", "warn", "error"] }],
-		"indent": ["error", "tab", { "SwitchCase": 1 }],
+		"quotes": [
+			"error",
+			"single"
+		],
+		"no-console": [
+			"warn",
+			{
+				"allow": [
+					"debug",
+					"warn",
+					"error"
+				]
+			}
+		],
+		"indent": [
+			"error",
+			"tab",
+			{
+				"SwitchCase": 1
+			}
+		],
 		"prefer-const": "error",
 		"prefer-template": "error",
-		"semi": ["error", "never"],
+		"semi": [
+			"error",
+			"never"
+		],
 		"import/no-unresolved": "off",
 		"no-unused-vars": [
 			"error",
@@ -17,11 +44,24 @@
 				"ignoreRestSiblings": true
 			}
 		],
-		"camelcase": ["error", { "properties": "never", "ignoreDestructuring": false }],
+		"camelcase": [
+			"error",
+			{
+				"properties": "never",
+				"ignoreDestructuring": false
+			}
+		],
 		"import/order": [
 			"error",
 			{
-				"groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+				"groups": [
+					"builtin",
+					"external",
+					"internal",
+					"parent",
+					"sibling",
+					"index"
+				],
 				"newlines-between": "always",
 				"alphabetize": {
 					"order": "asc",
@@ -29,10 +69,29 @@
 				}
 			}
 		],
-		"no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 1, "maxBOF": 0 }],
-		"object-shorthand": ["error", "always"],
-		"object-curly-spacing": ["error", "always"],
-		"object-curly-newline": ["error", { "multiline": true, "consistent": true }],
+		"no-multiple-empty-lines": [
+			"error",
+			{
+				"max": 1,
+				"maxEOF": 1,
+				"maxBOF": 0
+			}
+		],
+		"object-shorthand": [
+			"error",
+			"always"
+		],
+		"object-curly-spacing": [
+			"error",
+			"always"
+		],
+		"object-curly-newline": [
+			"error",
+			{
+				"multiline": true,
+				"consistent": true
+			}
+		],
 		"@typescript-eslint/ban-types": "error"
 	}
 }

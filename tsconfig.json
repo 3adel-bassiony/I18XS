@@ -1,6 +1,12 @@
 {
-	"include": ["./src/**/*"],
-	"exclude": ["node_modules", "build", "./src/tests/**/*"],
+	"include": [
+		"./src/**/*"
+	],
+	"exclude": [
+		"node_modules",
+		"build",
+		"./src/tests/**/*"
+	],
 	"compilerOptions": {
 		"declaration": true,
 		"emitDecoratorMetadata": true,
@@ -8,7 +14,7 @@
 		"module": "ESNext",
 		"esModuleInterop": true,
 		"target": "ESNext",
-		"moduleResolution": "Bundler",
+		"moduleResolution": "node",
 		"outDir": "./build",
 		"forceConsistentCasingInFileNames": true,
 		"strictPropertyInitialization": false,
@@ -16,12 +22,12 @@
 		"skipLibCheck": true,
 		"downlevelIteration": true,
 		"rootDir": "./src",
-		// "allowImportingTsExtensions": true,
-		// "noEmit": false,
 		"removeComments": true,
 		"composite": true,
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": [
+				"./src/*"
+			]
 		}
 	}
 }

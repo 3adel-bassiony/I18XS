@@ -1,4 +1,6 @@
-export type Config = {
+import { Localization } from './Localization'
+
+export interface Config {
 	supportedLocales?: string[]
 	currentLocale?: string
 	fallbackLocale?: string
@@ -7,4 +9,5 @@ export type Config = {
 	rtlLocales?: string[]
 	localesDir?: string
 	showLogs?: boolean
+	localizations?: Record<string, Record<string, Localization>>
 }

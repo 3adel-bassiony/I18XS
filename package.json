@@ -1,12 +1,12 @@
 {
 	"name": "i18xs",
-	"version": "1.4.2",
+	"version": "1.5.0",
 	"description": "A lightweight and simple package for i18n and localization for node.js",
 	"main": "build/index.js",
 	"types": "build/index.d.ts",
 	"scripts": {
-		"clean": "rm -rf build && echo 'Done.'",
-		"build": "bun run clean && tsc",
+		"clean": "rm -rf build && rm -rf tsconfig.tsbuildinfo && echo '✅ Clean Completed'",
+		"build": "bun run clean && tsc && echo '✅ Build Completed' && exit",
 		"lint": "eslint . --ext=.ts",
 		"format": "prettier --write .",
 		"test": "vitest",
