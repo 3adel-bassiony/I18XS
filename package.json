@@ -4,6 +4,7 @@
 	"description": "A lightweight and simple package for i18n and localization for node.js",
 	"main": "build/index.js",
 	"types": "build/index.d.ts",
+	"type": "module",
 	"scripts": {
 		"clean": "rm -rf build && rm -rf tsconfig.tsbuildinfo && echo '✅ Clean Completed'",
 		"build": "bun run clean && tsc && echo '✅ Build Completed' && exit",
