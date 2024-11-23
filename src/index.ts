@@ -1,8 +1,27 @@
-import fs from 'fs'
-
+import { isNodeJS } from './helpers'
 import { Config } from './types/Config'
 import { Localization } from './types/Localization'
 import { LocalizationData } from './types/LocalizationData'
+
+// Dynamic import for fs in ESM
+// eslint-disable-next-line @typescript-eslint/ban-types
+let fs: { readFileSync: Function; existsSync: Function } | null = null
+
+// Only load fs if we're in Node.js
+async function loadFS() {
+	try {
+		const module = await import('fs')
+		fs = {
+			readFileSync: module.readFileSync,
+			existsSync: module.existsSync,
+		}
+	} catch (error) {
+		fs = null
+	}
+}
+
+// Initialize fs
+loadFS()
 
 export default class I18XS {
 	/**
@@ -73,7 +92,7 @@ export default class I18XS {
 		showMissingIdentifierMessage = false,
 		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
-		localesDir = `${process.cwd()}/src/locales`,
+		localesDir = isNodeJS() ? `${process.cwd()}/src/locales` : '',
 		showLogs = false,
 		localizations = {},
 	}: Config) {
@@ -229,19 +248,26 @@ export default class I18XS {
 	}
 
 	/**
+	 * Checks if the current environment is Node.js
+	 * @returns {boolean} True if running in Node.js, false otherwise
+	 */
+	private isNodeJS(): boolean {
+		return isNodeJS()
+	}
+
+	/**
 	 * Loads the content of a localization file.
-	 * @param filePath - The path to the localization file.
-	 * @returns The parsed localization object, or undefined if the file cannot be loaded.
-	 * @example
-	 * const filePath = '/path/to/localization.json';
-	 * const localization = loadFileContent(filePath);
-	 * if (localization) {
-	 *   // Use the localization object
-	 * } else {
-	 *   // Handle the case when the file cannot be loaded
-	 * }
+	 * Only works in Node.js environments.
 	 */
 	private loadFileContent(filePath: string): Localization | undefined {
+		// Skip if not Node.js or fs not available
+		if (!this.isNodeJS() || !fs) {
+			if (this._showLogs) {
+				console.debug('File system is not supported in this environment')
+			}
+			return undefined
+		}
+
 		try {
 			const fileContents = fs.readFileSync(filePath, 'utf8')
 			const localization = JSON.parse(fileContents)
@@ -259,19 +285,7 @@ export default class I18XS {
 	}
 
 	/**
-	 * Loads the localization file based on the given file name.
-	 * Returns the loaded Localization object if the file exists, otherwise returns undefined.
-	 *
-	 * @param fileName - The name of the localization file (without the file extension).
-	 * @returns The loaded Localization object or undefined.
-	 *
-	 * @example
-	 * const localization = i18n.loadLocalization('messages');
-	 * if (localization) {
-	 *   console.log('Localization loaded:', localization);
-	 * } else {
-	 *   console.log('Localization file not found.');
-	 * }
+	 * Loads the localization from memory or file system (Node.js only).
 	 */
 	private loadLocalization(fileName: string): Localization | undefined {
 		// First check in-memory localizations
@@ -281,7 +295,15 @@ export default class I18XS {
 			return this._localizations[this._fallbackLocale][fileName]
 		}
 
-		// If not found in memory, try loading from files
+		// Only try file system in Node.js environment
+		if (!this.isNodeJS() || !fs) {
+			if (this._showLogs) {
+				console.debug('File system is not supported in this environment, using in-memory localizations only')
+			}
+			return undefined
+		}
+
+		// If not found in memory and we're in Node.js, try loading from files
 		const filePath = `${this._localesDir}/${this._currentLocale}/${fileName}.json`
 		const fallbackFilePath = `${this._localesDir}/${this._fallbackLocale}/${fileName}.json`
 
