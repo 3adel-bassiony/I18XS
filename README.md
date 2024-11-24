@@ -52,6 +52,18 @@ pnpm install i18xs
 
 &nbsp;
 
+# Supported Environments
+
+I18XS is compatible with the following environments:
+
+- **Node.js**: Use with ESM-enabled projects for server-side applications, CLI tools, or APIs.
+- **Bun**: Fully optimized for modern, fast runtimes like Bun.
+- **React Native**: Ideal for mobile applications, allowing direct localization without relying on file systems.
+- **Browser**: Easily integrate with client-side applications built with frameworks like React, Vue.js, or plain JavaScript.
+- **Other JavaScript Environments**: Works in any runtime that supports ESM (ECMAScript Modules).
+
+&nbsp;
+
 # Usage
 
 Once you have installed I18XS, integrating it into your project is straightforward. Below are the basic steps to get you started:
@@ -93,13 +105,13 @@ The I18XS package comes with a comprehensive set of features designed to make in
     -   **Customization and Extensibility**: Extend or customize functionalities to fit your application’s needs.
     -   **LTR & RTL Detection**: Detect LTR & RTL for easy access and usage
 
--   ### Localization Files
+-   ### Loading Localization
 
-    In multi-language applications, managing localization files is crucial. I18XS simplifies this process. Follow these guidelines to set up and utilize localization files effectively:
+    In multi-language applications, managing localization files is crucial. I18XS simplifies this process. Follow these guidelines to set up and utilize localization files effectively or you can just load all localizations at once:
 
-    -   #### File Structure
+    -   #### Multiple Files Structure
 
-        For each language supported by your application, create a folder for it in locales directory. These folders should be named using the locale's identifier, such as `en` for English, `ar` for Arabic, etc. Each file contains key-value pairs for localized strings.
+        Organize your localization files in a structured manner for each supported language. Create a folder for each language in the `locales` directory, naming them with the locale identifier (e.g., `en` for English, `ar` for Arabic). Each folder should contain JSON files with key-value pairs for localized strings.
 
         Example structure for the locales folder:
 
@@ -136,7 +148,29 @@ The I18XS package comes with a comprehensive set of features designed to make in
         }
         ```
 
-    -   #### Performance and Usage
+    - #### Pass All Localizations Directly
+        For applications that do not support loading localization files (e.g., React Native), you can pass localization data directly to the I18XS instance. This method eliminates the need to read JSON files at runtime.
+
+        ```typescript
+        const i18xs = new I18XS({
+            currentLocale: 'en',
+            supportedLocales: ['en', 'ar'],
+            localizations: {
+                en: {
+                    general: {
+                        Hello_World: 'Hello World',
+                    },
+                },
+                ar: {
+                    general: {
+                        Hello_World: 'مرحبًا بالعالم',
+                    },
+                },
+            },
+        })
+        ```
+
+    - #### Performance and Usage
 
         -   **Efficient Loading:** I18XS optimizes performance by loading only the current locale's JSON file. This approach ensures faster load times and reduces memory usage.
         -   **Multiple Files per Locale:** Each locale is represented by a folder and inside it multiple JSON files. This structure facilitates easier management and collaboration, also significantly enhancing performance and making it read faster.
