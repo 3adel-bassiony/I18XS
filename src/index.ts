@@ -1,4 +1,4 @@
-import { isNodeJS } from './helpers'
+import { isNodeJS } from './helpers/index.js'
 import { Config } from './types/Config'
 import { Localization } from './types/Localization'
 import { LocalizationData } from './types/LocalizationData'
