@@ -8,6 +8,7 @@ export interface Config {
 	missingIdentifierMessage?: string
 	rtlLocales?: string[]
 	localesDir?: string
+	featuresDir?: string
 	showLogs?: boolean
 	localizations?: Record<string, Record<string, Localization>>
 }

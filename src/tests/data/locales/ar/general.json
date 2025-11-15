@@ -12,5 +12,7 @@
 		"one": "عنصر واحد",
 		"two": "عنصران",
 		"other": "{itemsCount} عناصر, {resourcesCount} عناصر"
-	}
+	},
+	"api.error.message": "حدث خطأ في API",
+	"form.field.required": "هذا الحقل مطلوب"
 }

@@ -12,5 +12,7 @@
 		"one": "One item",
 		"two": "Two items",
 		"other": "{itemsCount} items, {resourcesCount} resources"
-	}
+	},
+	"api.error.message": "API Error Occurred",
+	"form.field.required": "This field is required"
 }

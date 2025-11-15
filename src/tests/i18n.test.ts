@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'bun:test'
 
 import I18XS from '..'
 
@@ -207,6 +207,34 @@ describe('I18XS Format Messages', () => {
 		expect(i18xs.t('Key_Not_Exist')).toBe('Missing_Localization_Identifier')
 	})
 
+	it('Should handle localization keys that contain dots', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		// Key with dots: "api.error.message"
+		expect(i18xs.t('general.api.error.message')).toBe('API Error Occurred')
+	})
+
+	it('Should handle localization keys with dots in Arabic', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+		expect(i18xs.t('general.api.error.message')).toBe('حدث خطأ في API')
+	})
+
+	it('Should handle multiple dot-separated keys', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		expect(i18xs.t('general.form.field.required')).toBe('This field is required')
+	})
+
 	// it('It should enable debug mode', async () => {
 	// 	const i18xs = new I18XS({ currentLocale: 'he', supportedLocales: ['en', 'ar'], showLogs: true })
 	// 	expect(i18xs.isShowLogs).toBe(true)
@@ -250,5 +278,156 @@ describe('I18XS Helpers', () => {
 		expect(i18xs.searchForLocalization('general.Hello_World', { Hello_World: 'Hello World' })).toStrictEqual(
 			'Hello World'
 		)
+	})
+})
+
+describe('I18XS Feature-Based Folders', () => {
+	const featuresDir = `${process.cwd()}/src/tests/data/features`
+
+	it('Should automatically load localization from feature folder', async () => {
+		const i18xs = new I18XS({
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		// No @ prefix needed - automatically detected!
+		expect(i18xs.t('foo.Hello_World')).toBe('Hello World')
+	})
+
+	it('Should load localization from feature folder in Arabic', async () => {
+		const i18xs = new I18XS({
+			featuresDir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+		expect(i18xs.t('foo.Hello_World')).toBe('مرحبًا بالعالم')
+	})
+
+	it('Should load localization from bar feature folder', async () => {
+		const i18xs = new I18XS({
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		expect(i18xs.t('bar.Hello_World')).toBe('Hello World')
+	})
+
+	it('Should check if feature-based identifier exists', async () => {
+		const i18xs = new I18XS({
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		expect(i18xs.hasIdentifier('foo.Hello_World')).toBe(true)
+	})
+
+	it('Should return fallback for non-existent feature', async () => {
+		const i18xs = new I18XS({
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		expect(i18xs.t('nonexistent.Key')).toBe('nonexistent.Key')
+	})
+
+	it('Should prioritize traditional structure over feature-based', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		// 'general' exists in traditional structure, should load from there first
+		expect(i18xs.t('general.Hello_World')).toBe('Hello World')
+		// 'foo' only exists in features, should load from there
+		expect(i18xs.t('foo.Hello_World')).toBe('Hello World')
+	})
+
+	it('Should only check featuresDir when localesDir is not provided (performance optimization)', async () => {
+		const i18xs = new I18XS({
+			featuresDir, // Only featuresDir provided
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		// Should load directly from features without checking localesDir first
+		expect(i18xs.t('foo.Hello_World')).toBe('Hello World')
+		expect(i18xs.t('bar.Hello_World')).toBe('Hello World')
+	})
+
+	it('Should only check localesDir when featuresDir is not provided (performance optimization)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir, // Only localesDir provided
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		// Should load directly from locales without checking featuresDir
+		expect(i18xs.t('general.Hello_World')).toBe('Hello World')
+		expect(i18xs.t('common.Success')).toBe('Success')
+	})
+})
+
+describe('I18XS React Native / Browser Compatibility', () => {
+	it('Should work with in-memory localizations only (React Native mode)', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					app: {
+						title: 'My React Native App',
+						greeting: 'Hello {name}',
+					},
+				},
+				ar: {
+					app: {
+						title: 'تطبيقي React Native',
+						greeting: 'مرحبا {name}',
+					},
+				},
+			},
+		})
+
+		expect(i18xs.t('app.title')).toBe('My React Native App')
+		expect(i18xs.t('app.greeting', { name: 'John' })).toBe('Hello John')
+	})
+
+	it('Should work with in-memory localizations in Arabic', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					app: {
+						title: 'My React Native App',
+					},
+				},
+				ar: {
+					app: {
+						title: 'تطبيقي React Native',
+					},
+				},
+			},
+		})
+
+		expect(i18xs.t('app.title')).toBe('تطبيقي React Native')
+		expect(i18xs.isCurrentLocaleRTL).toBe(true)
+	})
+
+	it('Should handle flat keys with dots in-memory (React Native)', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en'],
+			localizations: {
+				en: {
+					errors: {
+						'api.network.timeout': 'Network timeout error',
+						'form.validation.email': 'Invalid email',
+					},
+				},
+			},
+		})
+
+		expect(i18xs.t('errors.api.network.timeout')).toBe('Network timeout error')
+		expect(i18xs.t('errors.form.validation.email')).toBe('Invalid email')
 	})
 })

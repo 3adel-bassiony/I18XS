@@ -1,27 +1,31 @@
+import type { PathOrFileDescriptor } from 'fs'
+
 import { isNodeJS } from './helpers'
 import { Config } from './types/Config'
 import { Localization } from './types/Localization'
 import { LocalizationData } from './types/LocalizationData'
 
-// Dynamic import for fs in ESM
-// eslint-disable-next-line @typescript-eslint/ban-types
-let fs: { readFileSync: Function; existsSync: Function } | null = null
+// Conditionally import fs only in Node.js environments (not React Native)
+type ReadFileSyncFn = (path: PathOrFileDescriptor, encoding: BufferEncoding) => string
+type ExistsSyncFn = (path: PathOrFileDescriptor) => boolean
 
-// Only load fs if we're in Node.js
-async function loadFS() {
+let readFileSync: ReadFileSyncFn | undefined
+let existsSync: ExistsSyncFn | undefined
+
+// Try to load fs module using ESM dynamic import (only available in Node.js/Bun, not React Native)
+void (async () => {
 	try {
-		const module = await import('fs')
-		fs = {
-			readFileSync: module.readFileSync,
-			existsSync: module.existsSync,
+		if (isNodeJS() && typeof process !== 'undefined' && process.versions?.node) {
+			const fs = await import('fs')
+			readFileSync = fs.readFileSync as ReadFileSyncFn
+			existsSync = fs.existsSync as ExistsSyncFn
 		}
 	} catch (error) {
-		fs = null
+		// fs not available (React Native, browser, etc.)
+		readFileSync = undefined
+		existsSync = undefined
 	}
-}
-
-// Initialize fs
-loadFS()
+})()
 
 export default class I18XS {
 	/**
@@ -60,6 +64,11 @@ export default class I18XS {
 	protected _localesDir: string
 
 	/**
+	 * The directory path where the feature folders are stored.
+	 */
+	protected _featuresDir: string = ''
+
+	/**
 	 * Indicates whether debug mode is enabled.
 	 */
 	protected _showLogs: boolean = false
@@ -73,16 +82,25 @@ export default class I18XS {
 	 * Initializes a new instance of the I18XS class.
 	 * @param {Config} config - The configuration options for I18XS.
 	 * @example
+	 * // Node.js/Bun (with file system)
 	 * const i18n = new I18XS({
 	 *   supportedLocales: ['en', 'fr'],
 	 *   currentLocale: 'en',
 	 *   fallbackLocale: 'en',
-	 *   showMissingIdentifierMessage: true,
-	 *   missingIdentifierMessage: 'Missing_Localization_Identifier',
-	 *   rtlLocales: ['ar', 'he', 'fa'],
 	 *   localesDir: `${process.cwd()}/src/locales`,
-	 *   showLogs: true,
-	 *   localizations: {},
+	 *   featuresDir: `${process.cwd()}/src/features`,
+	 * });
+	 *
+	 * @example
+	 * // React Native/Browser (in-memory only)
+	 * const i18n = new I18XS({
+	 *   supportedLocales: ['en', 'ar'],
+	 *   currentLocale: 'en',
+	 *   fallbackLocale: 'en',
+	 *   localizations: {
+	 *     en: { general: { hello: 'Hello' } },
+	 *     ar: { general: { hello: 'مرحبا' } }
+	 *   }
 	 * });
 	 */
 	constructor({
@@ -93,11 +111,13 @@ export default class I18XS {
 		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
 		localesDir = isNodeJS() ? `${process.cwd()}/src/locales` : '',
+		featuresDir = '',
 		showLogs = false,
 		localizations = {},
 	}: Config) {
 		this.configure({
 			localesDir,
+			featuresDir,
 			supportedLocales,
 			currentLocale,
 			fallbackLocale,
@@ -203,11 +223,13 @@ export default class I18XS {
 	 *	 missingIdentifierMessage: 'Missing_Localization_Identifier',
 	 *   rtlLocales: ['ar', 'he', 'fa'],
 	 *   localesDir: '/path/to/locales',
+	 *   featuresDir: '/path/to/features',
 	 *   showLogs: true
 	 * });
 	 */
 	configure({
 		localesDir = this._localesDir,
+		featuresDir = this._featuresDir,
 		supportedLocales = ['en'],
 		currentLocale = 'en',
 		fallbackLocale = 'en',
@@ -218,6 +240,7 @@ export default class I18XS {
 		localizations = {},
 	}: Config): I18XS {
 		this._localesDir = localesDir
+		this._featuresDir = featuresDir
 		this._supportedLocales = supportedLocales
 		this._currentLocale = currentLocale
 		this._fallbackLocale = fallbackLocale
@@ -256,21 +279,28 @@ export default class I18XS {
 	}
 
 	/**
-	 * Loads the content of a localization file.
-	 * Only works in Node.js environments.
+	 * Loads the content of a localization file synchronously.
+	 * Uses Node.js/Bun's fs module for synchronous file operations.
+	 * Not available in React Native - use in-memory localizations instead.
 	 */
 	private loadFileContent(filePath: string): Localization | undefined {
-		// Skip if not Node.js or fs not available
-		if (!this.isNodeJS() || !fs) {
+		// Skip if fs is not available (React Native, browser, etc.)
+		if (!readFileSync || !existsSync) {
 			if (this._showLogs) {
-				console.debug('File system is not supported in this environment')
+				console.debug('File system is not available in this environment (React Native/Browser)')
 			}
 			return undefined
 		}
 
 		try {
-			const fileContents = fs.readFileSync(filePath, 'utf8')
-			const localization = JSON.parse(fileContents)
+			// Check if file exists
+			if (!existsSync(filePath)) {
+				return undefined
+			}
+
+			// Read and parse JSON synchronously
+			const content = readFileSync(filePath, 'utf8')
+			const localization = JSON.parse(content)
 
 			if (this._showLogs) {
 				console.debug({ message: 'Loaded file content', filePath, localization })
@@ -281,11 +311,19 @@ export default class I18XS {
 			if (this._showLogs) {
 				console.error({ message: 'Failed to load localization file content', error })
 			}
+			return undefined
 		}
 	}
 
 	/**
-	 * Loads the localization from memory or file system (Node.js only).
+	 * Loads the localization from memory or file system.
+	 * Performance-optimized to only check configured directories:
+	 * - If only localesDir: Traditional structure only
+	 * - If only featuresDir: Feature-based structure only
+	 * - If both: Tries traditional first, then feature-based
+	 *
+	 * Note: File system operations only work in Node.js/Bun.
+	 * For React Native/Browser, use in-memory localizations.
 	 */
 	private loadLocalization(fileName: string): Localization | undefined {
 		// First check in-memory localizations
@@ -295,35 +333,85 @@ export default class I18XS {
 			return this._localizations[this._fallbackLocale][fileName]
 		}
 
-		// Only try file system in Node.js environment
-		if (!this.isNodeJS() || !fs) {
+		// Skip file system if fs is not available (React Native, browser, etc.)
+		if (!readFileSync || !existsSync) {
 			if (this._showLogs) {
-				console.debug('File system is not supported in this environment, using in-memory localizations only')
+				console.debug('File system not available, using in-memory localizations only (React Native/Browser)')
 			}
 			return undefined
 		}
 
-		// If not found in memory and we're in Node.js, try loading from files
-		const filePath = `${this._localesDir}/${this._currentLocale}/${fileName}.json`
-		const fallbackFilePath = `${this._localesDir}/${this._fallbackLocale}/${fileName}.json`
-
 		try {
-			if (fs.existsSync(filePath)) {
-				return this.loadFileContent(filePath)
-			} else if (fs.existsSync(fallbackFilePath)) {
-				return this.loadFileContent(fallbackFilePath)
-			} else {
-				if (this._showLogs) {
-					console.debug(
-						`Localization file not found for both ${this._currentLocale} and ${this._fallbackLocale}`
-					)
+			const hasLocalesDir = !!this._localesDir
+			const hasFeaturesDir = !!this._featuresDir
+
+			// Performance optimization: Only check configured directories
+			if (hasLocalesDir && !hasFeaturesDir) {
+				// Only traditional structure configured - check only that
+				return this.loadFromTraditionalStructure(fileName)
+			} else if (hasFeaturesDir && !hasLocalesDir) {
+				// Only feature-based structure configured - check only that
+				return this.loadFromFeatureStructure(fileName)
+			} else if (hasLocalesDir && hasFeaturesDir) {
+				// Both configured - try traditional first, then feature-based
+				const localization = this.loadFromTraditionalStructure(fileName)
+				if (localization) {
+					return localization
 				}
+				return this.loadFromFeatureStructure(fileName)
 			}
+
+			if (this._showLogs) {
+				console.debug('No localesDir or featuresDir configured')
+			}
+
+			return undefined
 		} catch (error) {
 			if (this._showLogs) {
 				console.error({ message: 'Failed to load localization', error })
 			}
+			return undefined
 		}
+	}
+
+	/**
+	 * Loads from traditional structure: locales/{locale}/{file}.json
+	 */
+	private loadFromTraditionalStructure(fileName: string): Localization | undefined {
+		const filePath = `${this._localesDir}/${this._currentLocale}/${fileName}.json`
+		const fallbackFilePath = `${this._localesDir}/${this._fallbackLocale}/${fileName}.json`
+
+		let localization = this.loadFileContent(filePath)
+		if (localization) {
+			return localization
+		}
+
+		localization = this.loadFileContent(fallbackFilePath)
+		if (localization) {
+			return localization
+		}
+
+		return undefined
+	}
+
+	/**
+	 * Loads from feature-based structure: features/{feature}/locales/{locale}.json
+	 */
+	private loadFromFeatureStructure(fileName: string): Localization | undefined {
+		const featureFilePath = `${this._featuresDir}/${fileName}/locales/${this._currentLocale}.json`
+		const featureFallbackPath = `${this._featuresDir}/${fileName}/locales/${this._fallbackLocale}.json`
+
+		let localization = this.loadFileContent(featureFilePath)
+		if (localization) {
+			return localization
+		}
+
+		localization = this.loadFileContent(featureFallbackPath)
+		if (localization) {
+			return localization
+		}
+
+		return undefined
 	}
 
 	/**
@@ -422,25 +510,37 @@ export default class I18XS {
 
 	/**
 	 * Searches for a localization based on the given identifier.
+	 * Supports both flat keys with dots (e.g., "api.error.message") and nested objects.
 	 *
 	 * @param identifier - The identifier of the localization.
-	 * @returns The localization value if found, otherwise the identifier itself.
+	 * @returns The localization value if found, otherwise undefined.
 	 *
 	 * @example
-	 * // Returns 'Hello'
-	 * searchForLocalization('greeting.message')
+	 * // Returns 'Hello' from nested: { greeting: { message: 'Hello' } }
+	 * searchForLocalization('greeting.message', localization)
 	 *
 	 * @example
-	 * // Returns 'greeting.message'
-	 * searchForLocalization('greeting.message.not.found')
+	 * // Returns 'API Error' from flat: { "api.error.message": "API Error" }
+	 * searchForLocalization('api.error.message', localization)
 	 */
-	searchForLocalization(identifier: string, localization: Localization): string | Localization {
-		return this.splitIdentifier(identifier).keys.reduce(
-			(acc: Localization | string, key: string): Localization | string => {
-				return typeof acc === 'object' ? acc[key] : acc
-			},
-			localization
-		)
+	searchForLocalization(identifier: string, localization: Localization): string | Localization | undefined {
+		const { keys } = this.splitIdentifier(identifier)
+
+		// First, try to find the key as a flat string with dots
+		// e.g., "api.error.message" as a single key
+		const flatKey = keys.join('.')
+		if (typeof localization === 'object' && flatKey in localization) {
+			return localization[flatKey]
+		}
+
+		// If not found as flat key, try nested navigation
+		// e.g., localization['api']['error']['message']
+		const result = keys.reduce<Localization | string | undefined>((acc, key) => {
+			if (acc === undefined) return undefined
+			return typeof acc === 'object' ? acc[key] : acc
+		}, localization)
+
+		return result
 	}
 
 	/**
@@ -509,15 +609,20 @@ export default class I18XS {
 
 	/**
 	 * Translates the given identifier to the corresponding localized message.
+	 * Automatically detects and loads from traditional or feature-based folder structures.
 	 * @param identifier - The identifier of the message to be translated.
 	 * @param data - Optional data to be used for message formatting.
 	 * @returns The translated message.
 	 * @example
-	 * // Translate a simple message
-	 * const message = t('hello');
+	 * // Translate from traditional structure: locales/en/general.json
+	 * const message = t('general.Hello_World');
 	 *
-	 * // Translate a message with data
-	 * const messageWithData = t('welcome', { name: 'John' });
+	 * // Translate with data
+	 * const messageWithData = t('general.Welcome', { name: 'John' });
+	 *
+	 * // Translate from feature folder: features/foo/locales/en.json
+	 * // Automatically detected when file is not in localesDir
+	 * const featureMessage = t('foo.Hello_World');
 	 */
 	t(identifier: string, data?: LocalizationData): string {
 		return this.formatMessage(identifier, data)
