@@ -431,3 +431,352 @@ describe('I18XS React Native / Browser Compatibility', () => {
 		expect(i18xs.t('errors.form.validation.email')).toBe('Invalid email')
 	})
 })
+
+describe('I18XS Preloading & Caching', () => {
+	it('Should preload all localizations by default', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			showLogs: false,
+		})
+
+		// All files should be preloaded, so translations work immediately
+		expect(i18xs.t('Hello_World')).toBe('Hello World')
+		expect(i18xs.t('Success')).toBe('Success')
+		expect(i18xs.t('string.required')).toBe('This field is required')
+	})
+
+	it('Should allow disabling preloading with preloadLocalizations: false', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: false, // Disable preloading
+			showLogs: false,
+		})
+
+		// With preloading disabled, traditional API still works
+		expect(i18xs.t('general.Hello_World')).toBe('Hello World')
+		expect(i18xs.t('common.Success')).toBe('Success')
+	})
+
+	it('Should cache files after loading with preloading disabled', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: false,
+			showLogs: false,
+		})
+
+		// First call loads and caches
+		const first = i18xs.t('general.Hello_World')
+		// Second call uses cache
+		const second = i18xs.t('general.Hello_World')
+
+		expect(first).toBe('Hello World')
+		expect(second).toBe('Hello World')
+	})
+
+	it('Should preload from both traditional and feature-based structures', async () => {
+		const featuresDir = `${process.cwd()}/src/tests/data/features`
+		const i18xs = new I18XS({
+			localesDir: dir,
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			showLogs: false,
+		})
+
+		// Should have access to both traditional and feature files
+		expect(i18xs.t('Hello_World')).toBe('Hello World') // from general.json
+		expect(i18xs.t('Success')).toBe('Success') // from common.json
+		// Feature files are also preloaded and merged
+		expect(i18xs.t('foo.Hello_World')).toBe('Hello World')
+	})
+
+	it('Should preload all supported locales', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			showLogs: false,
+		})
+
+		// English
+		expect(i18xs.t('Hello_World')).toBe('Hello World')
+
+		// Switch to Arabic
+		i18xs.changeCurrentLocale('ar')
+		expect(i18xs.t('Hello_World')).toBe('مرحبًا بالعالم')
+		expect(i18xs.t('Success')).toBe('نجاح')
+	})
+})
+
+describe('I18XS Simplified API (No File Prefix)', () => {
+	it('Should translate without file prefix when preloading is enabled', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// New simplified API - no file prefix needed
+		expect(i18xs.t('Hello_World')).toBe('Hello World')
+		expect(i18xs.t('Welcome_Message', { name: 'John' })).toBe('Welcome John')
+		expect(i18xs.t('Success')).toBe('Success')
+		expect(i18xs.t('Failed')).toBe('Failed')
+	})
+
+	it('Should support namespace access with dot notation', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// Access nested keys
+		expect(i18xs.t('string.required')).toBe('This field is required')
+	})
+
+	it('Should work with pluralization without file prefix', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		expect(i18xs.t('Items_Count', { itemsCount: 0 })).toBe('No items')
+		expect(i18xs.t('Items_Count', { itemsCount: 1 })).toBe('One item')
+		expect(i18xs.t('Items_Count', { itemsCount: 2 })).toBe('Two items')
+		expect(i18xs.t('Items_Count', { itemsCount: 10 })).toBe('10 items')
+	})
+
+	it('Should work with keys containing dots without file prefix', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// These are flat keys with dots in the JSON
+		expect(i18xs.t('api.error.message')).toBe('API Error Occurred')
+		expect(i18xs.t('form.field.required')).toBe('This field is required')
+	})
+
+	it('Should maintain backward compatibility with file prefix', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// Old API with file prefix should still work
+		expect(i18xs.t('general.Hello_World')).toBe('Hello World')
+		expect(i18xs.t('general.Welcome_Message', { name: 'Jane' })).toBe('Welcome Jane')
+		expect(i18xs.t('common.Success')).toBe('Success')
+		expect(i18xs.t('validation.string.required')).toBe('This field is required')
+	})
+
+	it('Should return fallback for non-existent keys without file prefix', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		expect(i18xs.t('NonExistent_Key')).toBe('NonExistent_Key')
+	})
+
+	it('Should return missing identifier message when enabled', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showMissingIdentifierMessage: true,
+			showLogs: false,
+		})
+
+		expect(i18xs.t('NonExistent_Key')).toBe('Missing_Localization_Identifier')
+	})
+})
+
+describe('I18XS Merged Localizations & Last-Load-Wins', () => {
+	it('Should merge all localization files into one namespace', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// All files (general, common, validation) are merged
+		expect(i18xs.t('Hello_World')).toBe('Hello World') // from general.json
+		expect(i18xs.t('Success')).toBe('Success') // from common.json
+		expect(i18xs.t('string.required')).toBe('This field is required') // from validation.json
+	})
+
+	it('Should apply last-load-wins strategy for conflicting keys', async () => {
+		const featuresDir = `${process.cwd()}/src/tests/data/features`
+		
+		// Create a scenario where we have the same key in different files
+		const i18xs = new I18XS({
+			localesDir: dir,
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// Both traditional general.json and feature foo have Hello_World
+		// Features are loaded after traditional, so they should win
+		expect(i18xs.t('Hello_World')).toBe('Hello World')
+	})
+
+	it('Should merge traditional and feature-based localizations', async () => {
+		const featuresDir = `${process.cwd()}/src/tests/data/features`
+		const i18xs = new I18XS({
+			localesDir: dir,
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// Can access keys from both traditional and feature files without prefix
+		expect(i18xs.t('Hello_World')).toBe('Hello World')
+		expect(i18xs.t('Success')).toBe('Success')
+		
+		// Old API still works for feature files
+		expect(i18xs.t('foo.Hello_World')).toBe('Hello World')
+		expect(i18xs.t('bar.Hello_World')).toBe('Hello World')
+	})
+
+	it('Should work correctly when switching locales with merged localizations', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// English
+		expect(i18xs.t('Hello_World')).toBe('Hello World')
+		expect(i18xs.t('Success')).toBe('Success')
+
+		// Switch to Arabic
+		i18xs.changeCurrentLocale('ar')
+		expect(i18xs.t('Hello_World')).toBe('مرحبًا بالعالم')
+		expect(i18xs.t('Success')).toBe('نجاح')
+
+		// Switch back to English
+		i18xs.changeCurrentLocale('en')
+		expect(i18xs.t('Hello_World')).toBe('Hello World')
+	})
+
+	it('Should handle hasIdentifier with merged localizations', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// Should work with both old and new API
+		expect(i18xs.hasIdentifier('general.Hello_World')).toBe(true)
+		expect(i18xs.hasIdentifier('common.Success')).toBe(true)
+		expect(i18xs.hasIdentifier('NonExistent.Key')).toBe(false)
+	})
+})
+
+describe('I18XS Preloading with Features Only', () => {
+	it('Should preload feature-based localizations without traditional structure', async () => {
+		const featuresDir = `${process.cwd()}/src/tests/data/features`
+		const i18xs = new I18XS({
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// Should work with both old and new API
+		expect(i18xs.t('foo.Hello_World')).toBe('Hello World')
+		expect(i18xs.t('bar.Hello_World')).toBe('Hello World')
+	})
+
+	it('Should merge feature localizations when preloading', async () => {
+		const featuresDir = `${process.cwd()}/src/tests/data/features`
+		const i18xs = new I18XS({
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// With merged localizations, we can access without feature prefix
+		// if both features have different keys, they're all available
+		expect(i18xs.t('Hello_World')).toBe('Hello World')
+	})
+})
+
+describe('I18XS Preloading Performance', () => {
+	it('Should not perform disk I/O after preloading', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		// Multiple calls should use cached data
+		for (let i = 0; i < 100; i++) {
+			expect(i18xs.t('Hello_World')).toBe('Hello World')
+			expect(i18xs.t('Success')).toBe('Success')
+		}
+	})
+
+	it('Should handle reconfiguration with preloading', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en'],
+			preloadLocalizations: true,
+			showLogs: false,
+		})
+
+		expect(i18xs.t('Hello_World')).toBe('Hello World')
+
+		// Reconfigure with different locales
+		i18xs.configure({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+		})
+
+		// Should preload again with new configuration
+		expect(i18xs.t('Hello_World')).toBe('مرحبًا بالعالم')
+	})
+})

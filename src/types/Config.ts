@@ -11,4 +11,5 @@ export interface Config {
 	featuresDir?: string
 	showLogs?: boolean
 	localizations?: Record<string, Record<string, Localization>>
+	preloadLocalizations?: boolean
 }

@@ -8,24 +8,33 @@ import { LocalizationData } from './types/LocalizationData'
 // Conditionally import fs only in Node.js environments (not React Native)
 type ReadFileSyncFn = (path: PathOrFileDescriptor, encoding: BufferEncoding) => string
 type ExistsSyncFn = (path: PathOrFileDescriptor) => boolean
+type ReaddirSyncFn = (path: PathOrFileDescriptor) => string[]
 
 let readFileSync: ReadFileSyncFn | undefined
 let existsSync: ExistsSyncFn | undefined
+let readdirSync: ReaddirSyncFn | undefined
 
-// Try to load fs module using ESM dynamic import (only available in Node.js/Bun, not React Native)
-void (async () => {
-	try {
-		if (isNodeJS() && typeof process !== 'undefined' && process.versions?.node) {
-			const fs = await import('fs')
+// Synchronously load fs module for Node.js/Bun environments
+function loadFileSystem(): void {
+	if (isNodeJS() && typeof process !== 'undefined' && process.versions?.node) {
+		try {
+			// Use require for synchronous loading in Node.js/Bun
+			// eslint-disable-next-line @typescript-eslint/no-var-requires
+			const fs = require('fs')
 			readFileSync = fs.readFileSync as ReadFileSyncFn
 			existsSync = fs.existsSync as ExistsSyncFn
+			readdirSync = fs.readdirSync as ReaddirSyncFn
+		} catch (error) {
+			// fs not available (React Native, browser, etc.)
+			readFileSync = undefined
+			existsSync = undefined
+			readdirSync = undefined
 		}
-	} catch (error) {
-		// fs not available (React Native, browser, etc.)
-		readFileSync = undefined
-		existsSync = undefined
 	}
-})()
+}
+
+// Load fs immediately
+loadFileSystem()
 
 export default class I18XS {
 	/**
@@ -79,6 +88,11 @@ export default class I18XS {
 	protected _localizations: Record<string, Record<string, Localization>> = {}
 
 	/**
+	 * Indicates whether to preload all localization files during initialization.
+	 */
+	protected _preloadLocalizations: boolean = true
+
+	/**
 	 * Initializes a new instance of the I18XS class.
 	 * @param {Config} config - The configuration options for I18XS.
 	 * @example
@@ -114,6 +128,7 @@ export default class I18XS {
 		featuresDir = '',
 		showLogs = false,
 		localizations = {},
+		preloadLocalizations = true,
 	}: Config) {
 		this.configure({
 			localesDir,
@@ -126,6 +141,7 @@ export default class I18XS {
 			rtlLocales,
 			showLogs,
 			localizations,
+			preloadLocalizations,
 		})
 	}
 
@@ -238,6 +254,7 @@ export default class I18XS {
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
 		showLogs = false,
 		localizations = {},
+		preloadLocalizations = true,
 	}: Config): I18XS {
 		this._localesDir = localesDir
 		this._featuresDir = featuresDir
@@ -249,6 +266,12 @@ export default class I18XS {
 		this._rtlLocales = rtlLocales
 		this._showLogs = showLogs
 		this._localizations = localizations
+		this._preloadLocalizations = preloadLocalizations
+
+		// Preload all localizations if enabled
+		if (this._preloadLocalizations) {
+			this.preloadAllLocalizations()
+		}
 
 		return this
 	}
@@ -276,6 +299,183 @@ export default class I18XS {
 	 */
 	private isNodeJS(): boolean {
 		return isNodeJS()
+	}
+
+	/**
+	 * Caches a localization in memory for the specified locale and file name.
+	 * This improves performance by avoiding repeated disk reads.
+	 * @param locale - The locale code (e.g., 'en', 'ar')
+	 * @param fileName - The localization file name
+	 * @param localization - The localization data to cache
+	 */
+	private cacheLocalization(locale: string, fileName: string, localization: Localization): void {
+		if (!this._localizations[locale]) {
+			this._localizations[locale] = {}
+		}
+		this._localizations[locale][fileName] = localization
+
+		if (this._showLogs) {
+			console.debug({ message: 'Cached localization', locale, fileName })
+		}
+	}
+
+	/**
+	 * Preloads all localization files from both traditional and feature-based structures.
+	 * This eliminates runtime file I/O and improves translation performance.
+	 * Only works in Node.js/Bun environments with file system access.
+	 *
+	 * @example
+	 * // Automatic preloading during initialization (default)
+	 * const i18n = new I18XS({ preloadLocalizations: true });
+	 *
+	 * // Manual preloading
+	 * i18n.preloadAllLocalizations();
+	 */
+	preloadAllLocalizations(): void {
+		// Skip if fs is not available (React Native, browser, etc.)
+		if (!readFileSync || !existsSync || !readdirSync) {
+			if (this._showLogs) {
+				console.debug('File system not available, skipping preload (React Native/Browser)')
+			}
+			return
+		}
+
+		try {
+			// Preload from traditional structure (locales/{locale}/{file}.json)
+			if (this._localesDir && existsSync(this._localesDir)) {
+				this.preloadFromTraditionalStructure()
+			}
+
+			// Preload from feature-based structure (features/{feature}/locales/{locale}.json)
+			if (this._featuresDir && existsSync(this._featuresDir)) {
+				this.preloadFromFeatureStructure()
+			}
+
+			if (this._showLogs) {
+				console.debug({
+					message: 'Preloaded all localizations',
+					locales: Object.keys(this._localizations),
+					files: Object.keys(this._localizations[this._currentLocale] || {}),
+				})
+			}
+		} catch (error) {
+			if (this._showLogs) {
+				console.error({ message: 'Failed to preload localizations', error })
+			}
+		}
+	}
+
+	/**
+	 * Preloads all localization files from traditional structure: locales/{locale}/{file}.json
+	 */
+	private preloadFromTraditionalStructure(): void {
+		if (!readdirSync || !existsSync) return
+
+		for (const locale of this._supportedLocales) {
+			const localePath = `${this._localesDir}/${locale}`
+
+			if (!existsSync(localePath)) {
+				continue
+			}
+
+			try {
+				const files = readdirSync(localePath)
+
+				// Initialize merged localization for this locale if not exists
+				if (!this._localizations[locale]) {
+					this._localizations[locale] = {}
+				}
+
+				// Create a single merged object for all files
+				if (!this._localizations[locale]['__merged__']) {
+					this._localizations[locale]['__merged__'] = {}
+				}
+
+				for (const file of files) {
+					if (file.endsWith('.json')) {
+						const fileName = file.replace('.json', '')
+						const filePath = `${localePath}/${file}`
+						const localization = this.loadFileContent(filePath)
+
+						if (localization) {
+							// Cache with original file name for backward compatibility
+							this.cacheLocalization(locale, fileName, localization)
+
+							// Merge into the unified localization object (last-load-wins)
+							this._localizations[locale]['__merged__'] = {
+								...this._localizations[locale]['__merged__'],
+								...localization,
+							}
+
+							if (this._showLogs) {
+								console.debug({ message: 'Merged localization', locale, fileName })
+							}
+						}
+					}
+				}
+			} catch (error) {
+				if (this._showLogs) {
+					console.error({ message: 'Failed to preload from traditional structure', locale, error })
+				}
+			}
+		}
+	}
+
+	/**
+	 * Preloads all localization files from feature-based structure: features/{feature}/locales/{locale}.json
+	 */
+	private preloadFromFeatureStructure(): void {
+		if (!readdirSync || !existsSync) return
+
+		try {
+			const features = readdirSync(this._featuresDir)
+
+			for (const feature of features) {
+				const featurePath = `${this._featuresDir}/${feature}`
+				const localesPath = `${featurePath}/locales`
+
+				if (!existsSync(localesPath)) {
+					continue
+				}
+
+				for (const locale of this._supportedLocales) {
+					const localeFilePath = `${localesPath}/${locale}.json`
+
+					if (existsSync(localeFilePath)) {
+						const localization = this.loadFileContent(localeFilePath)
+
+						if (localization) {
+							// Cache with original feature name for backward compatibility
+							this.cacheLocalization(locale, feature, localization)
+
+							// Initialize merged localization for this locale if not exists
+							if (!this._localizations[locale]) {
+								this._localizations[locale] = {}
+							}
+
+							// Create a single merged object for all files
+							if (!this._localizations[locale]['__merged__']) {
+								this._localizations[locale]['__merged__'] = {}
+							}
+
+							// Merge into the unified localization object (last-load-wins)
+							this._localizations[locale]['__merged__'] = {
+								...this._localizations[locale]['__merged__'],
+								...localization,
+							}
+
+							if (this._showLogs) {
+								console.debug({ message: 'Merged localization', locale, feature })
+							}
+						}
+					}
+				}
+			}
+		} catch (error) {
+			if (this._showLogs) {
+				console.error({ message: 'Failed to preload from feature structure', error })
+			}
+		}
 	}
 
 	/**
@@ -326,7 +526,16 @@ export default class I18XS {
 	 * For React Native/Browser, use in-memory localizations.
 	 */
 	private loadLocalization(fileName: string): Localization | undefined {
-		// First check in-memory localizations
+		// If preloading is enabled, always try to use the merged localization first
+		if (this._preloadLocalizations) {
+			if (this._localizations[this._currentLocale]?.['__merged__']) {
+				return this._localizations[this._currentLocale]['__merged__']
+			} else if (this._localizations[this._fallbackLocale]?.['__merged__']) {
+				return this._localizations[this._fallbackLocale]['__merged__']
+			}
+		}
+
+		// Fall back to individual file loading (backward compatibility for lazy loading)
 		if (this._localizations[this._currentLocale]?.[fileName]) {
 			return this._localizations[this._currentLocale][fileName]
 		} else if (this._localizations[this._fallbackLocale]?.[fileName]) {
@@ -383,11 +592,15 @@ export default class I18XS {
 
 		let localization = this.loadFileContent(filePath)
 		if (localization) {
+			// Cache the loaded localization
+			this.cacheLocalization(this._currentLocale, fileName, localization)
 			return localization
 		}
 
 		localization = this.loadFileContent(fallbackFilePath)
 		if (localization) {
+			// Cache the loaded localization
+			this.cacheLocalization(this._fallbackLocale, fileName, localization)
 			return localization
 		}
 
@@ -403,11 +616,15 @@ export default class I18XS {
 
 		let localization = this.loadFileContent(featureFilePath)
 		if (localization) {
+			// Cache the loaded localization
+			this.cacheLocalization(this._currentLocale, fileName, localization)
 			return localization
 		}
 
 		localization = this.loadFileContent(featureFallbackPath)
 		if (localization) {
+			// Cache the loaded localization
+			this.cacheLocalization(this._fallbackLocale, fileName, localization)
 			return localization
 		}
 
@@ -552,11 +769,56 @@ export default class I18XS {
 	 * @returns The formatted message.
 	 *
 	 * @example
-	 * const i18xs = new I18XS();
-	 * const message = i18xs.formatMessage('welcome', { name: 'John' });
+	 * // With preloading enabled (simplified API - no file prefix needed)
+	 * const i18xs = new I18XS({ preloadLocalizations: true });
+	 * const message = i18xs.formatMessage('Welcome_Message', { name: 'John' });
+	 * console.log(message); // Output: "Welcome, John!"
+	 *
+	 * @example
+	 * // With namespace support
+	 * const message = i18xs.formatMessage('Bank_Accounts.Welcome_Message', { name: 'John' });
+	 * console.log(message); // Output: "Welcome to Bank Accounts, John!"
+	 *
+	 * @example
+	 * // Traditional API (with file prefix) still works
+	 * const message = i18xs.formatMessage('general.Welcome_Message', { name: 'John' });
 	 * console.log(message); // Output: "Welcome, John!"
 	 */
 	formatMessage(identifier: string, data?: LocalizationData): string {
+		// When preloading is enabled, try merged localization first (no file prefix needed)
+		if (this._preloadLocalizations) {
+			const mergedLocalization =
+				this._localizations[this._currentLocale]?.['__merged__'] ||
+				this._localizations[this._fallbackLocale]?.['__merged__']
+
+			if (mergedLocalization) {
+				// Try to find the key directly in merged localizations (without file prefix)
+				let message = this.searchForLocalizationDirect(identifier, mergedLocalization)
+
+				// If not found and identifier contains a dot, try without the file prefix (backward compatibility)
+				// e.g., 'general.Hello_World' → 'Hello_World'
+				if (!message && identifier.includes('.')) {
+					const { keys } = this.splitIdentifier(identifier)
+					const identifierWithoutFile = keys.join('.')
+
+					if (identifierWithoutFile) {
+						message = this.searchForLocalizationDirect(identifierWithoutFile, mergedLocalization)
+					}
+				}
+
+				if (message) {
+					return this.formatMessageValue(message, data)
+				}
+
+				// Key not found in merged localizations
+				if (this._showMissingIdentifierMessage) {
+					return this._missingIdentifierMessage
+				}
+				return identifier
+			}
+		}
+
+		// Fall back to traditional file-based approach
 		const { fileName } = this.splitIdentifier(identifier)
 
 		if (!fileName) {
@@ -587,6 +849,16 @@ export default class I18XS {
 			return identifier
 		}
 
+		return this.formatMessageValue(message, data)
+	}
+
+	/**
+	 * Formats the actual message value (handles pluralization and data replacement)
+	 * @param message - The message value (string or pluralization object)
+	 * @param data - Optional data object for placeholders
+	 * @returns The formatted message string
+	 */
+	private formatMessageValue(message: string | Localization, data?: LocalizationData): string {
 		// If message is an object, it's a pluralization case
 		if (typeof message === 'object') {
 			const count: number = data?.[Object.keys(data)[0]] as number
@@ -608,21 +880,54 @@ export default class I18XS {
 	}
 
 	/**
+	 * Searches for a localization directly by identifier (without file prefix)
+	 * Supports nested keys with dots (e.g., "Bank_Accounts.Welcome_Message")
+	 * @param identifier - The full identifier (e.g., "Welcome_Message" or "Bank_Accounts.Welcome_Message")
+	 * @param localization - The merged localization object
+	 * @returns The localization value if found, otherwise undefined
+	 */
+	private searchForLocalizationDirect(
+		identifier: string,
+		localization: Localization
+	): string | Localization | undefined {
+		const keys = identifier.split('.')
+
+		// First, try to find the key as a flat string with dots
+		if (identifier in localization) {
+			return localization[identifier]
+		}
+
+		// If not found as flat key, try nested navigation
+		const result = keys.reduce<Localization | string | undefined>((acc, key) => {
+			if (acc === undefined) return undefined
+			return typeof acc === 'object' ? acc[key] : acc
+		}, localization)
+
+		return result
+	}
+
+	/**
 	 * Translates the given identifier to the corresponding localized message.
 	 * Automatically detects and loads from traditional or feature-based folder structures.
 	 * @param identifier - The identifier of the message to be translated.
 	 * @param data - Optional data to be used for message formatting.
 	 * @returns The translated message.
+	 *
 	 * @example
-	 * // Translate from traditional structure: locales/en/general.json
-	 * const message = t('general.Hello_World');
+	 * // With preloading enabled (default) - Simplified API without file prefix
+	 * const i18n = new I18XS({ preloadLocalizations: true });
+	 * const message = i18n.t('Hello_World'); // No file prefix needed!
+	 * const welcome = i18n.t('Welcome_Message', { name: 'John' });
 	 *
-	 * // Translate with data
-	 * const messageWithData = t('general.Welcome', { name: 'John' });
+	 * @example
+	 * // Namespace support - organize keys with nested objects
+	 * const message = i18n.t('Bank_Accounts.Welcome_Message'); // Access nested keys
+	 * const error = i18n.t('Validation.Email.Invalid');
 	 *
-	 * // Translate from feature folder: features/foo/locales/en.json
-	 * // Automatically detected when file is not in localesDir
-	 * const featureMessage = t('foo.Hello_World');
+	 * @example
+	 * // Traditional API (with file prefix) still works for backward compatibility
+	 * const message = i18n.t('general.Hello_World');
+	 * const featureMessage = i18n.t('foo.Hello_World');
 	 */
 	t(identifier: string, data?: LocalizationData): string {
 		return this.formatMessage(identifier, data)
