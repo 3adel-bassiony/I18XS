@@ -780,3 +780,921 @@ describe('I18XS Preloading Performance', () => {
 		expect(i18xs.t('Hello_World')).toBe('مرحبًا بالعالم')
 	})
 })
+
+describe('I18XS localizeValue', () => {
+	it('Should return localized value with id and title', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.localizeValue('general', 'Hello_World')
+		expect(result).toEqual({
+			id: 'Hello_World',
+			title: 'Hello World',
+		})
+	})
+
+	it('Should return localized value with data replacement', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.localizeValue('general', 'Welcome_Message', { name: 'John' })
+		expect(result).toEqual({
+			id: 'Welcome_Message',
+			title: 'Welcome John',
+		})
+	})
+
+	it('Should handle null value', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.localizeValue('general', null)
+		expect(result).toEqual({
+			id: null,
+			title: '',
+		})
+	})
+
+	it('Should handle undefined value', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.localizeValue('general', undefined)
+		expect(result).toEqual({
+			id: undefined,
+			title: '',
+		})
+	})
+
+	it('Should return missing identifier message when enabled for null values', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			showMissingIdentifierMessage: true,
+		})
+
+		const result = i18xs.localizeValue('general', null)
+		expect(result).toEqual({
+			id: null,
+			title: 'Missing_Localization_Identifier',
+		})
+	})
+
+	it('Should work with Arabic locale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.localizeValue('general', 'Hello_World')
+		expect(result).toEqual({
+			id: 'Hello_World',
+			title: 'مرحبًا بالعالم',
+		})
+	})
+})
+
+describe('I18XS getLocalizedValue', () => {
+	it('Should extract value for current locale from object', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe('Product')
+	})
+
+	it('Should extract Arabic value when locale is ar', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe('منتج')
+	})
+
+	it('Should return null when object is null', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedValue(null)
+		expect(result).toBe(null)
+	})
+
+	it('Should return null when object is undefined', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedValue(undefined)
+		expect(result).toBe(null)
+	})
+
+	it('Should return null when locale key does not exist in object', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe(null)
+	})
+
+	it('Should handle complex localized objects', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar', 'de'],
+		})
+
+		const localizedObject = {
+			en: 'Coffee',
+			ar: 'قهوة',
+			de: 'Kaffee',
+		}
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe('Coffee')
+
+		i18xs.changeCurrentLocale('ar')
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe('قهوة')
+
+		i18xs.changeCurrentLocale('de')
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe('Kaffee')
+	})
+})
+
+describe('I18XS getLocalizedProperty', () => {
+	it('Should extract localized property with default formatter (capitalize first letter)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const entity = { nameEn: 'Coffee', nameAr: 'قهوة' }
+		const result = i18xs.getLocalizedProperty(entity, 'name')
+		expect(result).toBe('Coffee')
+	})
+
+	it('Should extract Arabic property with default formatter', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const entity = { nameEn: 'Coffee', nameAr: 'قهوة' }
+		const result = i18xs.getLocalizedProperty(entity, 'name')
+		expect(result).toBe('قهوة')
+	})
+
+	it('Should return null when entity is null', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedProperty(null, 'name')
+		expect(result).toBe(null)
+	})
+
+	it('Should return null when entity is undefined', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedProperty(undefined, 'name')
+		expect(result).toBe(null)
+	})
+
+	it('Should return null when entity is not an object', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedProperty('not an object', 'name')
+		expect(result).toBe(null)
+	})
+
+	it('Should return null when property does not exist', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const entity = { nameAr: 'قهوة' }
+		const result = i18xs.getLocalizedProperty(entity, 'name')
+		expect(result).toBe(null)
+	})
+
+	it('Should return null when property value is not a string', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const entity = { nameEn: 123, nameAr: 'قهوة' }
+		const result = i18xs.getLocalizedProperty(entity, 'name')
+		expect(result).toBe(null)
+	})
+
+	it('Should work with custom suffix formatter (uppercase)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const entity = { title_EN: 'Manager', title_AR: 'مدير' }
+		const result = i18xs.getLocalizedProperty(entity, 'title_', (locale) => locale.toUpperCase())
+		expect(result).toBe('Manager')
+	})
+
+	it('Should work with custom suffix formatter (lowercase with underscore)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const entity = { description_en: 'Item', description_ar: 'عنصر' }
+		const result = i18xs.getLocalizedProperty(entity, 'description_', (locale) => locale)
+		expect(result).toBe('Item')
+	})
+
+	it('Should work with Arabic locale and custom formatter', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const entity = { description_en: 'Item', description_ar: 'عنصر' }
+		const result = i18xs.getLocalizedProperty(entity, 'description_', (locale) => locale)
+		expect(result).toBe('عنصر')
+	})
+
+	it('Should handle multiple properties in the same entity', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const product = {
+			nameEn: 'Coffee',
+			nameAr: 'قهوة',
+			descriptionEn: 'A hot beverage',
+			descriptionAr: 'مشروب ساخن',
+		}
+
+		expect(i18xs.getLocalizedProperty(product, 'name')).toBe('Coffee')
+		expect(i18xs.getLocalizedProperty(product, 'description')).toBe('A hot beverage')
+
+		i18xs.changeCurrentLocale('ar')
+		expect(i18xs.getLocalizedProperty(product, 'name')).toBe('قهوة')
+		expect(i18xs.getLocalizedProperty(product, 'description')).toBe('مشروب ساخن')
+	})
+})
+
+describe('I18XS formatNumber', () => {
+	it('Should format number in English locale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(1234567.89)
+		expect(result).toBe('1,234,567.89')
+	})
+
+	it('Should format number in Arabic locale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(1234567.89)
+		// Arabic formatting may use Arabic-Indic numerals or standard digits depending on environment
+		// Just verify it formats correctly and returns a string
+		expect(typeof result).toBe('string')
+		expect(result.length).toBeGreaterThan(0)
+	})
+
+	it('Should format number with minimum and maximum fraction digits', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(42.5, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+		expect(result).toBe('42.50')
+	})
+
+	it('Should format number without grouping', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(1234567, { useGrouping: false })
+		expect(result).toBe('1234567')
+	})
+
+	it('Should format number in scientific notation', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(123456, { notation: 'scientific' })
+		expect(result).toContain('E') // Scientific notation contains E
+	})
+
+	it('Should format number in compact notation', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(1234567, { notation: 'compact' })
+		expect(result).toContain('M') // Compact notation for millions
+	})
+
+	it('Should handle zero', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(0)
+		expect(result).toBe('0')
+	})
+
+	it('Should handle negative numbers', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(-1234.56)
+		expect(result).toBe('-1,234.56')
+	})
+
+	it('Should handle very large numbers', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(999999999999)
+		expect(result).toBe('999,999,999,999')
+	})
+
+	it('Should handle very small decimals', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatNumber(0.0001, { minimumFractionDigits: 4 })
+		expect(result).toBe('0.0001')
+	})
+})
+
+describe('I18XS formatCurrency', () => {
+	it('Should format currency in English locale (USD)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(99.99, 'USD')
+		expect(result).toContain('99.99')
+		expect(result).toContain('$')
+	})
+
+	it('Should format currency in Arabic locale (USD)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(99.99, 'USD')
+		expect(result).toContain('US$') // Arabic formatting
+	})
+
+	it('Should format currency with SAR (Saudi Riyal)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(1500, 'SAR')
+		expect(result).toContain('ر.س') // SAR symbol in Arabic
+	})
+
+	it('Should format currency with EGP (Egyptian Pound)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(250.5, 'EGP')
+		expect(result).toContain('250.5') // Contains the value
+		expect(result).toContain('EGP') // Contains currency code
+	})
+
+	it('Should format currency with custom display (code)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(99.99, 'EUR', { currencyDisplay: 'code' })
+		expect(result).toContain('EUR')
+		expect(result).toContain('99.99')
+	})
+
+	it('Should format currency with custom display (name)', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(99.99, 'EUR', { currencyDisplay: 'name' })
+		expect(result).toContain('euro') // Currency name
+	})
+
+	it('Should format currency without decimal places', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(99.99, 'USD', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+		expect(result).toContain('100') // Rounded
+		expect(result).toContain('$')
+	})
+
+	it('Should format negative currency with accounting format', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(-50, 'USD', { currencySign: 'accounting' })
+		expect(result).toContain('50') // Contains value
+	})
+
+	it('Should handle zero currency', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(0, 'USD')
+		expect(result).toContain('0.00')
+		expect(result).toContain('$')
+	})
+
+	it('Should handle very large currency values', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.formatCurrency(1000000.99, 'USD')
+		expect(result).toContain('1,000,000.99')
+		expect(result).toContain('$')
+	})
+
+	it('Should switch currency formatting with locale changes', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const enResult = i18xs.formatCurrency(100, 'USD')
+		expect(enResult).toContain('$')
+
+		i18xs.changeCurrentLocale('ar')
+		const arResult = i18xs.formatCurrency(100, 'USD')
+		expect(arResult).toContain('US$')
+	})
+})
+
+describe('I18XS textDirection', () => {
+	it('Should return ltr for English locale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		expect(i18xs.textDirection).toBe('ltr')
+	})
+
+	it('Should return rtl for Arabic locale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		expect(i18xs.textDirection).toBe('rtl')
+	})
+
+	it('Should return rtl for Hebrew locale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'he',
+			supportedLocales: ['en', 'ar', 'he'],
+		})
+
+		expect(i18xs.textDirection).toBe('rtl')
+	})
+
+	it('Should return rtl for Persian/Farsi locale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fa',
+			supportedLocales: ['en', 'fa'],
+		})
+
+		expect(i18xs.textDirection).toBe('rtl')
+	})
+
+	it('Should return rtl for Urdu locale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ur',
+			supportedLocales: ['en', 'ur'],
+		})
+
+		expect(i18xs.textDirection).toBe('rtl')
+	})
+
+	it('Should update direction when locale changes', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		expect(i18xs.textDirection).toBe('ltr')
+
+		i18xs.changeCurrentLocale('ar')
+		expect(i18xs.textDirection).toBe('rtl')
+
+		i18xs.changeCurrentLocale('en')
+		expect(i18xs.textDirection).toBe('ltr')
+	})
+
+	it('Should respect custom rtlLocales configuration', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'he',
+			supportedLocales: ['en', 'he'],
+			rtlLocales: ['ar'], // Only Arabic is RTL
+		})
+
+		// Hebrew not in rtlLocales, should be LTR
+		expect(i18xs.textDirection).toBe('ltr')
+	})
+
+	it('Should return ltr for French locale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		expect(i18xs.textDirection).toBe('ltr')
+	})
+})
+
+describe('I18XS findMissingKeys', () => {
+	it('Should return empty object when all locales have same keys', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					general: {
+						Hello: 'Hello',
+						Goodbye: 'Goodbye',
+					},
+				},
+				ar: {
+					general: {
+						Hello: 'مرحبا',
+						Goodbye: 'وداعا',
+					},
+				},
+			},
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(missing).toEqual({})
+	})
+
+	it('Should detect missing keys in one locale', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					general: {
+						Hello: 'Hello',
+						Goodbye: 'Goodbye',
+						Welcome: 'Welcome',
+					},
+				},
+				ar: {
+					general: {
+						Hello: 'مرحبا',
+						Goodbye: 'وداعا',
+						// Welcome is missing
+					},
+				},
+			},
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(missing).toEqual({
+			ar: ['Welcome'],
+		})
+	})
+
+	it('Should detect missing keys in multiple locales', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar', 'fr'],
+			localizations: {
+				en: {
+					general: {
+						Hello: 'Hello',
+						Goodbye: 'Goodbye',
+						Welcome: 'Welcome',
+					},
+				},
+				ar: {
+					general: {
+						Hello: 'مرحبا',
+						// Goodbye and Welcome missing
+					},
+				},
+				fr: {
+					general: {
+						Hello: 'Bonjour',
+						Goodbye: 'Au revoir',
+						// Welcome missing
+					},
+				},
+			},
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(missing.ar).toContain('Goodbye')
+		expect(missing.ar).toContain('Welcome')
+		expect(missing.fr).toContain('Welcome')
+		expect(missing.ar.length).toBe(2)
+		expect(missing.fr.length).toBe(1)
+	})
+
+	it('Should detect missing nested keys', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					__merged__: {
+						profile: {
+							settings: {
+								theme: 'Theme',
+								language: 'Language',
+							},
+						},
+					},
+				},
+				ar: {
+					__merged__: {
+						profile: {
+							settings: {
+								theme: 'السمة',
+								// language missing
+							},
+						},
+					},
+				},
+			},
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(missing.ar).toContain('profile.settings.language')
+	})
+
+	it('Should handle pluralization objects correctly', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					__merged__: {
+						items: {
+							zero: 'No items',
+							one: 'One item',
+							other: '{count} items',
+						},
+					},
+				},
+				ar: {
+					__merged__: {
+						// items missing
+					},
+				},
+			},
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(missing.ar).toContain('items')
+	})
+
+	it('Should work with merged localizations', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+		})
+
+		const missing = i18xs.findMissingKeys()
+		// Should return empty or minimal missing keys
+		expect(typeof missing).toBe('object')
+	})
+
+	it('Should sort missing keys alphabetically', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					general: {
+						Zebra: 'Zebra',
+						Apple: 'Apple',
+						Banana: 'Banana',
+					},
+				},
+				ar: {
+					general: {},
+				},
+			},
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(missing.ar).toEqual(['Apple', 'Banana', 'Zebra'])
+	})
+
+	it('Should handle empty localizations', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					general: {
+						Hello: 'Hello',
+					},
+				},
+				ar: {
+					general: {},
+				},
+			},
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(missing.ar).toContain('Hello')
+	})
+
+	it('Should handle keys with dots', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			localizations: {
+				en: {
+					__merged__: {
+						'api.error.message': 'API Error',
+						'form.field.required': 'Required',
+					},
+				},
+				ar: {
+					__merged__: {
+						'api.error.message': 'خطأ API',
+						// form.field.required missing
+					},
+				},
+			},
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(missing.ar).toContain('form.field.required')
+	})
+
+	it('Should only return locales with missing keys', async () => {
+		const i18xs = new I18XS({
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar', 'fr'],
+			localizations: {
+				en: {
+					general: {
+						Hello: 'Hello',
+						Goodbye: 'Goodbye',
+					},
+				},
+				ar: {
+					general: {
+						Hello: 'مرحبا',
+						Goodbye: 'وداعا',
+					},
+				},
+				fr: {
+					general: {
+						Hello: 'Bonjour',
+						// Goodbye missing
+					},
+				},
+			},
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(Object.keys(missing)).toEqual(['fr'])
+		expect(missing.fr).toContain('Goodbye')
+	})
+
+	it('Should work with feature-based structure', async () => {
+		const featuresDir = `${process.cwd()}/src/tests/data/features`
+		const i18xs = new I18XS({
+			featuresDir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			preloadLocalizations: true,
+		})
+
+		const missing = i18xs.findMissingKeys()
+		expect(typeof missing).toBe('object')
+	})
+})

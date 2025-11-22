@@ -4,6 +4,7 @@ import { isNodeJS } from './helpers'
 import { Config } from './types/Config'
 import { Localization } from './types/Localization'
 import { LocalizationData } from './types/LocalizationData'
+import { LocalizedValue } from './types/LocalizedValue'
 
 // Conditionally import fs only in Node.js environments (not React Native)
 type ReadFileSyncFn = (path: PathOrFileDescriptor, encoding: BufferEncoding) => string
@@ -721,7 +722,10 @@ export default class I18XS {
 		if (!data) return message
 
 		return Object.keys(data).reduce((acc, key) => {
-			return acc.replace(new RegExp(`{${key}}`, 'g'), (data?.[key] as string).toString())
+			const value = data?.[key]
+			// Handle null, undefined, and other non-string values safely
+			const replacement = value !== null && value !== undefined ? String(value) : ''
+			return acc.replace(new RegExp(`{${key}}`, 'g'), replacement)
 		}, message)
 	}
 
@@ -860,23 +864,81 @@ export default class I18XS {
 	 */
 	private formatMessageValue(message: string | Localization, data?: LocalizationData): string {
 		// If message is an object, it's a pluralization case
-		if (typeof message === 'object') {
-			const count: number = data?.[Object.keys(data)[0]] as number
+		if (typeof message === 'object' && message !== null) {
+			// Validate that this is a pluralization object
+			if (!this.isPluralizationObject(message)) {
+				// Not a valid pluralization object, return as-is or show error
+				if (this._showLogs) {
+					console.warn({ message: 'Invalid pluralization object', data: message })
+				}
+				return this._showMissingIdentifierMessage ? this._missingIdentifierMessage : ''
+			}
+
+			// Extract count from data - look for 'count' key or first numeric value
+			let count = 0
+			if (data) {
+				// Prefer explicit 'count' key
+				if ('count' in data && typeof data.count === 'number') {
+					count = data.count
+				} else {
+					// Fall back to first key's value if it's a number
+					const firstKey = Object.keys(data)[0]
+					if (firstKey && typeof data[firstKey] === 'number') {
+						count = data[firstKey] as number
+					}
+				}
+			}
+
+			// Select appropriate plural form
+			let selectedForm: string | undefined
 
 			switch (count) {
 				case 0:
-					return message.zero as string
+					selectedForm = message.zero as string | undefined
+					break
 				case 1:
-					return message.one as string
+					selectedForm = message.one as string | undefined
+					break
 				case 2:
-					return message.two as string
+					selectedForm = message.two as string | undefined
+					break
 				default:
-					return this.replaceData(message.other as string, data)
+					selectedForm = message.other as string | undefined
 			}
+
+			// Fall back to 'other' if specific form doesn't exist
+			if (!selectedForm) {
+				selectedForm = message.other as string | undefined
+			}
+
+			// If still no form found, return error or empty
+			if (!selectedForm || typeof selectedForm !== 'string') {
+				if (this._showLogs) {
+					console.warn({ message: 'No valid plural form found', count, pluralData: message })
+				}
+				return this._showMissingIdentifierMessage ? this._missingIdentifierMessage : ''
+			}
+
+			return this.replaceData(selectedForm, data)
 		}
 
 		// Otherwise, it's a simple string
 		return this.replaceData(message as string, data)
+	}
+
+	/**
+	 * Checks if an object is a valid pluralization object.
+	 * A valid pluralization object should have at least 'other' property and be an object.
+	 * @param obj - The object to check
+	 * @returns True if it's a valid pluralization object
+	 */
+	private isPluralizationObject(obj: Localization): boolean {
+		if (typeof obj !== 'object' || obj === null) {
+			return false
+		}
+
+		// Must have at least the 'other' key for plural forms
+		return 'other' in obj || 'zero' in obj || 'one' in obj || 'two' in obj
 	}
 
 	/**
@@ -931,5 +993,421 @@ export default class I18XS {
 	 */
 	t(identifier: string, data?: LocalizationData): string {
 		return this.formatMessage(identifier, data)
+	}
+
+	/**
+	 * Localizes a value based on the provided locale file and value.
+	 * @param localeFile - The locale file to use.
+	 * @param value - The value to localize.
+	 * @param data - Optional data to be used for message formatting.
+	 * @returns The localized value.
+	 *
+	 * @example
+	 * const localizedValue = i18n.localizeValue('common', 'Hello_World', { name: 'John' });
+	 * console.log(localizedValue); // Output: { id: "Hello_World", title: "Hello John" }
+	 */
+	localizeValue(localeFile: string, value: string | null | undefined, data?: LocalizationData): LocalizedValue {
+		if (value === null || value === undefined) {
+			return {
+				id: value,
+				title: this._showMissingIdentifierMessage ? this._missingIdentifierMessage : '',
+			}
+		}
+
+		return {
+			id: value,
+			title: this.formatMessage(`${localeFile}.${value}`, data),
+		}
+	}
+
+	/**
+	 * Extracts the localized string value from an object using the current locale as the key.
+	 * Useful for objects with locale-keyed values like: { en: "Hello", ar: "مرحبا" }
+	 *
+	 * @param localizedObject - An object with locale codes as keys and localized strings as values
+	 * @returns The string value for the current locale, or null if not found or object is null/undefined
+	 *
+	 * @example
+	 * const name = { en: "Product", ar: "منتج" };
+	 * const localizedName = i18n.getLocalizedValue(name); // Returns "Product" if currentLocale is "en"
+	 */
+	getLocalizedValue(localizedObject?: Record<string, string> | null): string | null {
+		if (!localizedObject) return null
+
+		return localizedObject[this.currentLocale] ?? null
+	}
+
+	/**
+	 * Extracts a localized property from an entity based on the current locale.
+	 * Useful for database entities with separate columns per locale (e.g., nameEn, nameAr).
+	 *
+	 * @param entity - The entity object containing localized properties
+	 * @param basePropertyName - The base property name without the locale suffix
+	 * @param formatSuffix - Optional function to format the locale suffix. Defaults to capitalizing first letter (e.g., 'en' -> 'En')
+	 * @returns The localized property value, or null if not found or entity is null/undefined
+	 *
+	 * @example
+	 * // Default behavior: capitalizes first letter
+	 * const product = { nameEn: "Coffee", nameAr: "قهوة" };
+	 * const name = i18n.getLocalizedProperty(product, "name"); // Returns "Coffee" if currentLocale is "en"
+	 *
+	 * @example
+	 * // Custom suffix formatter for uppercase
+	 * const user = { title_EN: "Manager", title_AR: "مدير" };
+	 * const title = i18n.getLocalizedProperty(user, "title_", (locale) => locale.toUpperCase());
+	 *
+	 * @example
+	 * // Custom suffix formatter for underscore notation
+	 * const item = { description_en: "Item", description_ar: "عنصر" };
+	 * const desc = i18n.getLocalizedProperty(item, "description_", (locale) => locale);
+	 */
+	getLocalizedProperty(
+		entity: unknown,
+		basePropertyName: string,
+		formatSuffix?: (locale: string) => string
+	): string | null {
+		if (!entity || typeof entity !== 'object') return null
+
+		// Default formatter: capitalize first letter (e.g., 'en' -> 'En')
+		const defaultFormatter = (locale: string): string => {
+			return locale.charAt(0).toUpperCase() + locale.slice(1).toLowerCase()
+		}
+
+		const formatter = formatSuffix ?? defaultFormatter
+		const propertyName = `${basePropertyName}${formatter(this.currentLocale)}`
+
+		const value = (entity as Record<string, unknown>)[propertyName]
+
+		return typeof value === 'string' ? value : null
+	}
+
+	/**
+	 * Formats a number according to the current locale.
+	 * Uses the Intl.NumberFormat API for locale-aware number formatting.
+	 *
+	 * @param value - The number to format
+	 * @param options - Optional Intl.NumberFormatOptions for customization
+	 * @returns The formatted number string
+	 *
+	 * @example
+	 * // Basic number formatting
+	 * i18n.formatNumber(1234567.89)
+	 * // en: "1,234,567.89"
+	 * // ar: "١٬٢٣٤٬٥٦٧٫٨٩"
+	 * // de: "1.234.567,89"
+	 *
+	 * @example
+	 * // With decimal places
+	 * i18n.formatNumber(42.5, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+	 * // "42.50"
+	 *
+	 * @example
+	 * // With grouping disabled
+	 * i18n.formatNumber(1234567, { useGrouping: false })
+	 * // "1234567"
+	 *
+	 * @example
+	 * // Scientific notation
+	 * i18n.formatNumber(123456, { notation: 'scientific' })
+	 * // "1.23E5"
+	 *
+	 * @example
+	 * // Compact notation
+	 * i18n.formatNumber(1234567, { notation: 'compact' })
+	 * // en: "1.2M"
+	 * // ar: "١٫٢ مليون"
+	 */
+	formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
+		try {
+			const formatter = new Intl.NumberFormat(this._currentLocale, options)
+			return formatter.format(value)
+		} catch (error) {
+			if (this._showLogs) {
+				console.error({ message: 'Failed to format number', value, error })
+			}
+			// Fallback to basic toString
+			return value.toString()
+		}
+	}
+
+	/**
+	 * Formats a currency value according to the current locale.
+	 * Uses the Intl.NumberFormat API with currency-specific formatting.
+	 *
+	 * @param value - The numeric value to format
+	 * @param currency - The ISO 4217 currency code (e.g., 'USD', 'EUR', 'SAR', 'EGP')
+	 * @param options - Optional Intl.NumberFormatOptions for customization
+	 * @returns The formatted currency string
+	 *
+	 * @example
+	 * // Basic currency formatting
+	 * i18n.formatCurrency(99.99, 'USD')
+	 * // en: "$99.99"
+	 * // ar: "٩٩٫٩٩ US$"
+	 * // de: "99,99 $"
+	 *
+	 * @example
+	 * // Arabic Riyal
+	 * i18n.changeCurrentLocale('ar')
+	 * i18n.formatCurrency(1500, 'SAR')
+	 * // "١٬٥٠٠٫٠٠ ر.س."
+	 *
+	 * @example
+	 * // Egyptian Pound
+	 * i18n.formatCurrency(250.5, 'EGP')
+	 * // en: "EGP 250.50"
+	 * // ar: "٢٥٠٫٥٠ ج.م."
+	 *
+	 * @example
+	 * // With custom display (symbol, code, name)
+	 * i18n.formatCurrency(99.99, 'EUR', { currencyDisplay: 'code' })
+	 * // "EUR 99.99"
+	 *
+	 * i18n.formatCurrency(99.99, 'EUR', { currencyDisplay: 'name' })
+	 * // en: "99.99 euros"
+	 *
+	 * @example
+	 * // Without decimal places
+	 * i18n.formatCurrency(99.99, 'USD', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+	 * // "$100"
+	 *
+	 * @example
+	 * // Accounting format (shows negatives in parentheses)
+	 * i18n.formatCurrency(-50, 'USD', { currencySign: 'accounting' })
+	 * // "($50.00)"
+	 */
+	formatCurrency(value: number, currency: string, options?: Intl.NumberFormatOptions): string {
+		try {
+			const formatter = new Intl.NumberFormat(this._currentLocale, {
+				style: 'currency',
+				currency,
+				...options,
+			})
+			return formatter.format(value)
+		} catch (error) {
+			if (this._showLogs) {
+				console.error({ message: 'Failed to format currency', value, currency, error })
+			}
+			// Fallback to basic formatting
+			return `${currency} ${value.toFixed(2)}`
+		}
+	}
+
+	/**
+	 * Gets the text direction for the current locale.
+	 * Returns 'rtl' for right-to-left languages, 'ltr' otherwise.
+	 * Useful for setting the HTML dir attribute.
+	 *
+	 * @returns The text direction: 'ltr' or 'rtl'
+	 *
+	 * @example
+	 * // Using with HTML
+	 * <html dir={i18n.getTextDirection()}>
+	 *
+	 * @example
+	 * // Using in React
+	 * function App() {
+	 *   const direction = i18n.getTextDirection()
+	 *   return <div dir={direction}>Content</div>
+	 * }
+	 *
+	 * @example
+	 * // Conditional styling
+	 * const marginStart = i18n.getTextDirection() === 'rtl' ? 'marginRight' : 'marginLeft'
+	 *
+	 * @example
+	 * i18n.changeCurrentLocale('en')
+	 * i18n.getTextDirection() // 'ltr'
+	 *
+	 * i18n.changeCurrentLocale('ar')
+	 * i18n.getTextDirection() // 'rtl'
+	 */
+	get textDirection(): 'ltr' | 'rtl' {
+		return this.isCurrentLocaleRTL ? 'rtl' : 'ltr'
+	}
+
+	/**
+	 * Finds missing translation keys across all supported locales.
+	 * Compares each locale against all others to identify missing keys.
+	 * Useful for development, testing, and CI/CD pipelines to ensure translation completeness.
+	 *
+	 * @returns An object mapping each locale to an array of missing key paths
+	 *
+	 * @example
+	 * // Basic usage
+	 * const missing = i18n.findMissingKeys()
+	 * console.log(missing)
+	 * // {
+	 * //   ar: ['welcome.title', 'profile.settings.theme'],
+	 * //   fr: ['welcome.subtitle']
+	 * // }
+	 *
+	 * @example
+	 * // Check if all locales are complete
+	 * const missing = i18n.findMissingKeys()
+	 * const hasErrors = Object.values(missing).some(keys => keys.length > 0)
+	 * if (hasErrors) {
+	 *   console.error('Missing translations detected!', missing)
+	 * }
+	 *
+	 * @example
+	 * // Use in CI/CD
+	 * const missing = i18n.findMissingKeys()
+	 * if (Object.keys(missing).length > 0) {
+	 *   process.exit(1) // Fail the build
+	 * }
+	 *
+	 * @example
+	 * // Display in development UI
+	 * const missing = i18n.findMissingKeys()
+	 * Object.entries(missing).forEach(([locale, keys]) => {
+	 *   if (keys.length > 0) {
+	 *     console.warn(`Locale '${locale}' is missing ${keys.length} keys:`, keys)
+	 *   }
+	 * })
+	 */
+	findMissingKeys(): Record<string, string[]> {
+		const missingKeys: Record<string, string[]> = {}
+
+		// Initialize result object for all supported locales
+		this._supportedLocales.forEach((locale) => {
+			missingKeys[locale] = []
+		})
+
+		try {
+			// Get all unique keys from all locales
+			const allKeys = new Set<string>()
+
+			// Collect all keys from all locales
+			for (const locale of this._supportedLocales) {
+				const localeData = this._localizations[locale]
+				if (!localeData) continue
+
+				// Get keys from merged localization if available
+				if (localeData['__merged__']) {
+					this.collectKeys(localeData['__merged__'], '', allKeys)
+				} else {
+					// Collect keys from individual files
+					Object.values(localeData).forEach((fileData) => {
+						this.collectKeys(fileData, '', allKeys)
+					})
+				}
+			}
+
+			// Check each locale for missing keys
+			for (const locale of this._supportedLocales) {
+				const localeData = this._localizations[locale]
+
+				for (const key of allKeys) {
+					// Check if key exists in merged localization
+					if (localeData?.['__merged__']) {
+						if (!this.hasKey(key, localeData['__merged__'])) {
+							missingKeys[locale].push(key)
+						}
+					} else if (localeData) {
+						// Check across all files for this locale
+						let found = false
+						for (const fileData of Object.values(localeData)) {
+							if (this.hasKey(key, fileData)) {
+								found = true
+								break
+							}
+						}
+						if (!found) {
+							missingKeys[locale].push(key)
+						}
+					} else {
+						// Locale has no data at all
+						missingKeys[locale].push(key)
+					}
+				}
+
+				// Sort keys for better readability
+				missingKeys[locale].sort()
+			}
+
+			// Only return locales that have missing keys
+			const result: Record<string, string[]> = {}
+			for (const [locale, keys] of Object.entries(missingKeys)) {
+				if (keys.length > 0) {
+					result[locale] = keys
+				}
+			}
+
+			if (this._showLogs) {
+				console.debug({
+					message: 'Missing keys analysis complete',
+					totalKeys: allKeys.size,
+					localesWithMissingKeys: Object.keys(result).length,
+					details: result,
+				})
+			}
+
+			return result
+		} catch (error) {
+			if (this._showLogs) {
+				console.error({ message: 'Failed to find missing keys', error })
+			}
+			return {}
+		}
+	}
+
+	/**
+	 * Recursively collects all keys from a localization object.
+	 * @param obj - The localization object to traverse
+	 * @param prefix - The current key path prefix
+	 * @param keys - Set to store all found keys
+	 */
+	private collectKeys(obj: Localization | string, prefix: string, keys: Set<string>): void {
+		if (typeof obj === 'string') {
+			if (prefix) {
+				keys.add(prefix)
+			}
+			return
+		}
+
+		if (typeof obj === 'object' && obj !== null) {
+			// Check if it's a pluralization object (has zero, one, two, other)
+			if ('zero' in obj || 'one' in obj || 'two' in obj || 'other' in obj) {
+				if (prefix) {
+					keys.add(prefix)
+				}
+				return
+			}
+
+			// Recursively process nested objects
+			for (const [key, value] of Object.entries(obj)) {
+				const newPrefix = prefix ? `${prefix}.${key}` : key
+				this.collectKeys(value, newPrefix, keys)
+			}
+		}
+	}
+
+	/**
+	 * Checks if a key exists in a localization object.
+	 * Supports both flat keys with dots and nested object navigation.
+	 * @param key - The key to search for (e.g., "greeting.message")
+	 * @param obj - The localization object to search in
+	 * @returns True if the key exists, false otherwise
+	 */
+	private hasKey(key: string, obj: Localization): boolean {
+		// Try flat key first
+		if (key in obj) {
+			return true
+		}
+
+		// Try nested navigation
+		const keys = key.split('.')
+		let current: Localization | string = obj
+
+		for (const k of keys) {
+			if (typeof current === 'object' && current !== null && k in current) {
+				current = current[k]
+			} else {
+				return false
+			}
+		}
+
+		return current !== undefined
 	}
 }
