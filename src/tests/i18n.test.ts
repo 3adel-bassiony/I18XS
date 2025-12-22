@@ -633,7 +633,7 @@ describe('I18XS Merged Localizations & Last-Load-Wins', () => {
 
 	it('Should apply last-load-wins strategy for conflicting keys', async () => {
 		const featuresDir = `${process.cwd()}/src/tests/data/features`
-		
+
 		// Create a scenario where we have the same key in different files
 		const i18xs = new I18XS({
 			localesDir: dir,
@@ -663,7 +663,7 @@ describe('I18XS Merged Localizations & Last-Load-Wins', () => {
 		// Can access keys from both traditional and feature files without prefix
 		expect(i18xs.t('Hello_World')).toBe('Hello World')
 		expect(i18xs.t('Success')).toBe('Success')
-		
+
 		// Old API still works for feature files
 		expect(i18xs.t('foo.Hello_World')).toBe('Hello World')
 		expect(i18xs.t('bar.Hello_World')).toBe('Hello World')
@@ -818,10 +818,7 @@ describe('I18XS localizeValue', () => {
 		})
 
 		const result = i18xs.localizeValue('general', null)
-		expect(result).toEqual({
-			id: null,
-			title: '',
-		})
+		expect(result).toBeNull()
 	})
 
 	it('Should handle undefined value', async () => {
@@ -832,10 +829,7 @@ describe('I18XS localizeValue', () => {
 		})
 
 		const result = i18xs.localizeValue('general', undefined)
-		expect(result).toEqual({
-			id: undefined,
-			title: '',
-		})
+		expect(result).toBeNull()
 	})
 
 	it('Should return missing identifier message when enabled for null values', async () => {
@@ -847,10 +841,7 @@ describe('I18XS localizeValue', () => {
 		})
 
 		const result = i18xs.localizeValue('general', null)
-		expect(result).toEqual({
-			id: null,
-			title: 'Missing_Localization_Identifier',
-		})
+		expect(result).toBeNull()
 	})
 
 	it('Should work with Arabic locale', async () => {

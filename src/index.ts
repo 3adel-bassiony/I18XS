@@ -1006,13 +1006,15 @@ export default class I18XS {
 	 * const localizedValue = i18n.localizeValue('common', 'Hello_World', { name: 'John' });
 	 * console.log(localizedValue); // Output: { id: "Hello_World", title: "Hello John" }
 	 */
-	localizeValue(localeFile: string, value: string | null | undefined, data?: LocalizationData): LocalizedValue {
-		if (value === null || value === undefined) {
-			return {
-				id: value,
-				title: this._showMissingIdentifierMessage ? this._missingIdentifierMessage : '',
-			}
-		}
+	localizeValue(localeFile: string, value: null | undefined, data?: LocalizationData): null
+	localizeValue(localeFile: string, value: string, data?: LocalizationData): LocalizedValue
+	localizeValue(localeFile: string, value: string | null | undefined, data?: LocalizationData): LocalizedValue | null
+	localizeValue(
+		localeFile: string,
+		value: string | null | undefined,
+		data?: LocalizationData
+	): LocalizedValue | null {
+		if (value === null || value === undefined) return null
 
 		return {
 			id: value,
