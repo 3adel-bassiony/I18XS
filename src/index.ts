@@ -1033,7 +1033,7 @@ export default class I18XS {
 	 * const name = { en: "Product", ar: "منتج" };
 	 * const localizedName = i18n.getLocalizedValue(name); // Returns "Product" if currentLocale is "en"
 	 */
-	getLocalizedValue(localizedObject?: Record<string, string> | null): string | null {
+	getLocalizedValue(localizedObject?: Record<string, string | null> | null): string | null {
 		if (!localizedObject) return null
 
 		return localizedObject[this.currentLocale] ?? null
