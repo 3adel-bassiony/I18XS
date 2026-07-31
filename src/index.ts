@@ -1027,16 +1027,29 @@ export default class I18XS {
 	 * Useful for objects with locale-keyed values like: { en: "Hello", ar: "مرحبا" }
 	 *
 	 * @param localizedObject - An object with locale codes as keys and localized strings as values
-	 * @returns The string value for the current locale, or null if not found or object is null/undefined
+	 * @param options - Optional settings
+	 * @param options.fallbackLocale - Locale to use when the current locale value is missing or null
+	 * @returns The string value for the current locale, the fallback locale if provided, or null
 	 *
 	 * @example
 	 * const name = { en: "Product", ar: "منتج" };
 	 * const localizedName = i18n.getLocalizedValue(name); // Returns "Product" if currentLocale is "en"
+	 *
+	 * @example
+	 * const name = { en: "Product" };
+	 * // currentLocale is "ar" — falls back to English instead of null
+	 * const localizedName = i18n.getLocalizedValue(name, { fallbackLocale: 'en' }); // "Product"
 	 */
-	getLocalizedValue(localizedObject?: Record<string, string | null> | null): string | null {
+	getLocalizedValue(
+		localizedObject?: Record<string, string | null> | null,
+		options?: { fallbackLocale?: string }
+	): string | null {
 		if (!localizedObject) return null
 
-		return localizedObject[this.currentLocale] ?? null
+		return (
+			localizedObject[this.currentLocale] ??
+			(options?.fallbackLocale ? localizedObject[options.fallbackLocale] ?? null : null)
+		)
 	}
 
 	/**

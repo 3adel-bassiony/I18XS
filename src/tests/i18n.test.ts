@@ -918,6 +918,101 @@ describe('I18XS getLocalizedValue', () => {
 		expect(result).toBe(null)
 	})
 
+	it('Should return null when current locale value is null and no fallbackLocale is provided', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: null }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe(null)
+	})
+
+	it('Should return null when options is provided without fallbackLocale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, {})
+		expect(result).toBe(null)
+	})
+
+	it('Should return fallbackLocale value when current locale key is missing', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { fallbackLocale: 'en' })
+		expect(result).toBe('Product')
+	})
+
+	it('Should return fallbackLocale value when current locale value is null', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: null }
+		const result = i18xs.getLocalizedValue(localizedObject, { fallbackLocale: 'en' })
+		expect(result).toBe('Product')
+	})
+
+	it('Should prefer current locale over fallbackLocale when both exist', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { fallbackLocale: 'en' })
+		expect(result).toBe('منتج')
+	})
+
+	it('Should return null when both current locale and fallbackLocale are missing', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			supportedLocales: ['en', 'ar', 'fr', 'de'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { fallbackLocale: 'de' })
+		expect(result).toBe(null)
+	})
+
+	it('Should return null when both current locale and fallbackLocale values are null', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: null, ar: null }
+		const result = i18xs.getLocalizedValue(localizedObject, { fallbackLocale: 'en' })
+		expect(result).toBe(null)
+	})
+
+	it('Should return null for null object even when fallbackLocale is provided', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedValue(null, { fallbackLocale: 'en' })
+		expect(result).toBe(null)
+	})
+
 	it('Should handle complex localized objects', async () => {
 		const i18xs = new I18XS({
 			localesDir: dir,
