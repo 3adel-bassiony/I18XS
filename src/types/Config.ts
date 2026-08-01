@@ -4,6 +4,7 @@ export interface Config {
 	supportedLocales?: string[]
 	currentLocale?: string
 	fallbackLocale?: string
+	useFallbackLocale?: boolean
 	showMissingIdentifierMessage?: boolean
 	missingIdentifierMessage?: string
 	rtlLocales?: string[]

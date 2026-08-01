@@ -54,6 +54,11 @@ export default class I18XS {
 	protected _fallbackLocale: string = 'en'
 
 	/**
+	 * Indicates whether getLocalizedValue should fall back to the configured fallbackLocale by default.
+	 */
+	protected _useFallbackLocale: boolean = false
+
+	/**
 	 * Indicates whether the missing identifier message should be shown.
 	 */
 	protected _showMissingIdentifierMessage: boolean = false
@@ -122,6 +127,7 @@ export default class I18XS {
 		supportedLocales = ['en'],
 		currentLocale = 'en',
 		fallbackLocale = 'en',
+		useFallbackLocale = false,
 		showMissingIdentifierMessage = false,
 		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
@@ -137,6 +143,7 @@ export default class I18XS {
 			supportedLocales,
 			currentLocale,
 			fallbackLocale,
+			useFallbackLocale,
 			showMissingIdentifierMessage,
 			missingIdentifierMessage,
 			rtlLocales,
@@ -181,6 +188,19 @@ export default class I18XS {
 	 */
 	get fallbackLocale(): string {
 		return this._fallbackLocale
+	}
+
+	/**
+	 * Whether getLocalizedValue falls back to the configured fallbackLocale by default.
+	 *
+	 * @returns {boolean} True when fallback locale usage is enabled in config.
+	 *
+	 * @example
+	 * const i18xs = new I18XS({ useFallbackLocale: true });
+	 * const enabled = i18xs.useFallbackLocale; // true
+	 */
+	get useFallbackLocale(): boolean {
+		return this._useFallbackLocale
 	}
 
 	/**
@@ -250,6 +270,7 @@ export default class I18XS {
 		supportedLocales = ['en'],
 		currentLocale = 'en',
 		fallbackLocale = 'en',
+		useFallbackLocale = false,
 		showMissingIdentifierMessage = false,
 		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
@@ -262,6 +283,7 @@ export default class I18XS {
 		this._supportedLocales = supportedLocales
 		this._currentLocale = currentLocale
 		this._fallbackLocale = fallbackLocale
+		this._useFallbackLocale = useFallbackLocale
 		this._showMissingIdentifierMessage = showMissingIdentifierMessage
 		this._missingIdentifierMessage = missingIdentifierMessage
 		this._rtlLocales = rtlLocales
@@ -1028,8 +1050,10 @@ export default class I18XS {
 	 *
 	 * @param localizedObject - An object with locale codes as keys and localized strings as values
 	 * @param options - Optional settings
-	 * @param options.fallbackLocale - Locale to use when the current locale value is missing or null
-	 * @returns The string value for the current locale, the fallback locale if provided, or null
+	 * @param options.fallbackLocale - Explicit locale to use when the current locale value is missing or null
+	 * @param options.useFallbackLocale - When true, falls back to the configured fallbackLocale.
+	 *   Defaults to the `useFallbackLocale` value from config (false by default).
+	 * @returns The string value for the current locale, a fallback locale if enabled, or null
 	 *
 	 * @example
 	 * const name = { en: "Product", ar: "منتج" };
@@ -1039,16 +1063,32 @@ export default class I18XS {
 	 * const name = { en: "Product" };
 	 * // currentLocale is "ar" — falls back to English instead of null
 	 * const localizedName = i18n.getLocalizedValue(name, { fallbackLocale: 'en' }); // "Product"
+	 *
+	 * @example
+	 * // Uses the fallbackLocale from config (e.g. 'en') without passing it each time
+	 * const localizedName = i18n.getLocalizedValue(name, { useFallbackLocale: true });
+	 *
+	 * @example
+	 * // Or enable it globally in config so every call falls back automatically
+	 * const i18n = new I18XS({ fallbackLocale: 'en', useFallbackLocale: true });
+	 * const localizedName = i18n.getLocalizedValue(name); // falls back to 'en' when missing
 	 */
 	getLocalizedValue(
 		localizedObject?: Record<string, string | null> | null,
-		options?: { fallbackLocale?: string }
+		options?: { fallbackLocale?: string; useFallbackLocale?: boolean }
 	): string | null {
 		if (!localizedObject) return null
 
+		const {
+			fallbackLocale: explicitFallbackLocale,
+			useFallbackLocale = this._useFallbackLocale,
+		} = options ?? {}
+		const fallbackLocale =
+			explicitFallbackLocale ?? (useFallbackLocale ? this._fallbackLocale : undefined)
+
 		return (
 			localizedObject[this.currentLocale] ??
-			(options?.fallbackLocale ? localizedObject[options.fallbackLocale] ?? null : null)
+			(fallbackLocale ? localizedObject[fallbackLocale] ?? null : null)
 		)
 	}
 

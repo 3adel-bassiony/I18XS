@@ -82,6 +82,74 @@ describe('I18XS Properties', () => {
 		expect(i18xs.fallbackLocale).toBe('en')
 	})
 
+	it('Should default useFallbackLocale to false', async () => {
+		const i18xs = new I18XS({ localesDir: dir, currentLocale: 'en', supportedLocales: ['en', 'ar'] })
+		expect(i18xs.useFallbackLocale).toBe(false)
+	})
+
+	it('Should get useFallbackLocale from config', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			useFallbackLocale: true,
+		})
+		expect(i18xs.useFallbackLocale).toBe(true)
+	})
+
+	it('Should get custom fallbackLocale from config', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			fallbackLocale: 'ar',
+			supportedLocales: ['en', 'ar'],
+		})
+		expect(i18xs.fallbackLocale).toBe('ar')
+	})
+
+	it('Should update useFallbackLocale via configure', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			useFallbackLocale: false,
+		})
+		expect(i18xs.useFallbackLocale).toBe(false)
+
+		i18xs.configure({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			useFallbackLocale: true,
+		})
+		expect(i18xs.useFallbackLocale).toBe(true)
+
+		i18xs.configure({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			useFallbackLocale: false,
+		})
+		expect(i18xs.useFallbackLocale).toBe(false)
+	})
+
+	it('Should reset useFallbackLocale to false when configure omits it', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+			useFallbackLocale: true,
+		})
+		expect(i18xs.useFallbackLocale).toBe(true)
+
+		i18xs.configure({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+		expect(i18xs.useFallbackLocale).toBe(false)
+	})
+
 	it('Should get the current locale', async () => {
 		const i18xs = new I18XS({ localesDir: dir, currentLocale: 'en', supportedLocales: ['en', 'ar'] })
 		i18xs.changeCurrentLocale('ar')
@@ -1013,6 +1081,378 @@ describe('I18XS getLocalizedValue', () => {
 		expect(result).toBe(null)
 	})
 
+	it('Should use configured fallbackLocale when useFallbackLocale is true', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { useFallbackLocale: true })
+		expect(result).toBe('Product')
+	})
+
+	it('Should return null when useFallbackLocale is false', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { useFallbackLocale: false })
+		expect(result).toBe(null)
+	})
+
+	it('Should prefer explicit fallbackLocale over useFallbackLocale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			supportedLocales: ['en', 'ar', 'fr', 'de'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج', de: 'Produkt' }
+		const result = i18xs.getLocalizedValue(localizedObject, {
+			fallbackLocale: 'de',
+			useFallbackLocale: true,
+		})
+		expect(result).toBe('Produkt')
+	})
+
+	it('Should return null when useFallbackLocale is true but configured fallback is missing', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'de',
+			supportedLocales: ['en', 'ar', 'fr', 'de'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { useFallbackLocale: true })
+		expect(result).toBe(null)
+	})
+
+	it('Should use configured fallbackLocale when current locale value is null and useFallbackLocale is true', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			fallbackLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: null }
+		const result = i18xs.getLocalizedValue(localizedObject, { useFallbackLocale: true })
+		expect(result).toBe('Product')
+	})
+
+	it('Should prefer current locale over configured fallback when useFallbackLocale is true', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			fallbackLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { useFallbackLocale: true })
+		expect(result).toBe('منتج')
+	})
+
+	it('Should return null for null object even when useFallbackLocale is true', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			fallbackLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedValue(null, { useFallbackLocale: true })
+		expect(result).toBe(null)
+	})
+
+	it('Should use configured fallbackLocale when useFallbackLocale is enabled in config', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe('Product')
+	})
+
+	it('Should not use config fallback when useFallbackLocale is false in config', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: false,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe(null)
+	})
+
+	it('Should allow per-call useFallbackLocale false to override config true', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { useFallbackLocale: false })
+		expect(result).toBe(null)
+	})
+
+	it('Should allow per-call useFallbackLocale true to override config false', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: false,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { useFallbackLocale: true })
+		expect(result).toBe('Product')
+	})
+
+	it('Should update useFallbackLocale via configure', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: false,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe(null)
+
+		i18xs.configure({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		expect(i18xs.useFallbackLocale).toBe(true)
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe('Product')
+	})
+
+	it('Should stop falling back after configure disables useFallbackLocale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe('Product')
+
+		i18xs.configure({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: false,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe(null)
+	})
+
+	it('Should use config useFallbackLocale when options object is empty', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, {})
+		expect(result).toBe('Product')
+	})
+
+	it('Should use config fallback when current locale value is null and useFallbackLocale is enabled in config', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: null }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe('Product')
+	})
+
+	it('Should prefer current locale over config fallback when useFallbackLocale is enabled in config', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe('منتج')
+	})
+
+	it('Should return null when config useFallbackLocale is enabled but fallback key is missing', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'de',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar', 'fr', 'de'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe(null)
+	})
+
+	it('Should return null for null object when useFallbackLocale is enabled in config', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar'],
+		})
+
+		expect(i18xs.getLocalizedValue(null)).toBe(null)
+		expect(i18xs.getLocalizedValue(undefined)).toBe(null)
+	})
+
+	it('Should prefer explicit fallbackLocale over config useFallbackLocale', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar', 'fr', 'de'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج', de: 'Produkt' }
+		const result = i18xs.getLocalizedValue(localizedObject, { fallbackLocale: 'de' })
+		expect(result).toBe('Produkt')
+	})
+
+	it('Should use custom config fallbackLocale with useFallbackLocale enabled', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			fallbackLocale: 'ar',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Product', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe('منتج')
+	})
+
+	it('Should return empty string for current locale without falling back', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'ar',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const localizedObject = { en: 'Product', ar: '' }
+		const result = i18xs.getLocalizedValue(localizedObject)
+		expect(result).toBe('')
+	})
+
+	it('Should return empty string from fallbackLocale when current locale is missing', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'fr',
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: '', ar: 'منتج' }
+		const result = i18xs.getLocalizedValue(localizedObject, { fallbackLocale: 'en' })
+		expect(result).toBe('')
+	})
+
+	it('Should return null for empty localized object without fallback', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedValue({})
+		expect(result).toBe(null)
+	})
+
+	it('Should return null for undefined object even when fallbackLocale is provided', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedValue(undefined, { fallbackLocale: 'en' })
+		expect(result).toBe(null)
+	})
+
+	it('Should return null for undefined object even when useFallbackLocale is true', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			fallbackLocale: 'en',
+			supportedLocales: ['en', 'ar'],
+		})
+
+		const result = i18xs.getLocalizedValue(undefined, { useFallbackLocale: true })
+		expect(result).toBe(null)
+	})
+
+	it('Should fall back after locale change when useFallbackLocale is enabled in config', async () => {
+		const i18xs = new I18XS({
+			localesDir: dir,
+			currentLocale: 'en',
+			fallbackLocale: 'en',
+			useFallbackLocale: true,
+			supportedLocales: ['en', 'ar', 'fr'],
+		})
+
+		const localizedObject = { en: 'Coffee', ar: 'قهوة' }
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe('Coffee')
+
+		i18xs.changeCurrentLocale('ar')
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe('قهوة')
+
+		i18xs.changeCurrentLocale('fr')
+		expect(i18xs.getLocalizedValue(localizedObject)).toBe('Coffee')
+	})
+
 	it('Should handle complex localized objects', async () => {
 		const i18xs = new I18XS({
 			localesDir: dir,
@@ -1032,6 +1472,466 @@ describe('I18XS getLocalizedValue', () => {
 
 		i18xs.changeCurrentLocale('de')
 		expect(i18xs.getLocalizedValue(localizedObject)).toBe('Kaffee')
+	})
+
+	describe('response matrix', () => {
+		const localizedObject = {
+			en: 'Hello',
+			ar: 'مرحبا',
+			de: 'Hallo',
+			empty: '',
+			nullable: null as string | null,
+		}
+
+		it('Should return the exact response for every input combination', async () => {
+			const cases: Array<{
+				name: string
+				config: {
+					currentLocale: string
+					fallbackLocale?: string
+					useFallbackLocale?: boolean
+					supportedLocales: string[]
+				}
+				input?: Record<string, string | null> | null
+				options?: { fallbackLocale?: string; useFallbackLocale?: boolean }
+				expected: string | null
+			}> = [
+				// No options / no fallback
+				{
+					name: 'current locale hit',
+					config: { currentLocale: 'en', supportedLocales: ['en', 'ar'] },
+					input: localizedObject,
+					expected: 'Hello',
+				},
+				{
+					name: 'current locale arabic hit',
+					config: { currentLocale: 'ar', supportedLocales: ['en', 'ar'] },
+					input: localizedObject,
+					expected: 'مرحبا',
+				},
+				{
+					name: 'missing current locale without options',
+					config: { currentLocale: 'fr', supportedLocales: ['en', 'ar', 'fr'] },
+					input: localizedObject,
+					expected: null,
+				},
+				{
+					name: 'null current locale value without options',
+					config: { currentLocale: 'nullable', supportedLocales: ['en', 'nullable'] },
+					input: localizedObject,
+					expected: null,
+				},
+				{
+					name: 'empty string current locale value',
+					config: { currentLocale: 'empty', supportedLocales: ['en', 'empty'] },
+					input: localizedObject,
+					expected: '',
+				},
+				{
+					name: 'null input',
+					config: { currentLocale: 'en', supportedLocales: ['en'] },
+					input: null,
+					expected: null,
+				},
+				{
+					name: 'undefined input',
+					config: { currentLocale: 'en', supportedLocales: ['en'] },
+					input: undefined,
+					expected: null,
+				},
+				{
+					name: 'empty object input',
+					config: { currentLocale: 'en', supportedLocales: ['en'] },
+					input: {},
+					expected: null,
+				},
+
+				// Explicit fallbackLocale option
+				{
+					name: 'explicit fallback when current missing',
+					config: { currentLocale: 'fr', supportedLocales: ['en', 'ar', 'fr'] },
+					input: localizedObject,
+					options: { fallbackLocale: 'en' },
+					expected: 'Hello',
+				},
+				{
+					name: 'explicit fallback arabic when current missing',
+					config: { currentLocale: 'fr', supportedLocales: ['en', 'ar', 'fr'] },
+					input: localizedObject,
+					options: { fallbackLocale: 'ar' },
+					expected: 'مرحبا',
+				},
+				{
+					name: 'explicit fallback when current value is null',
+					config: { currentLocale: 'nullable', supportedLocales: ['en', 'nullable'] },
+					input: localizedObject,
+					options: { fallbackLocale: 'de' },
+					expected: 'Hallo',
+				},
+				{
+					name: 'explicit fallback ignored when current exists',
+					config: { currentLocale: 'ar', supportedLocales: ['en', 'ar'] },
+					input: localizedObject,
+					options: { fallbackLocale: 'en' },
+					expected: 'مرحبا',
+				},
+				{
+					name: 'explicit fallback missing returns null',
+					config: { currentLocale: 'fr', supportedLocales: ['en', 'ar', 'fr', 'it'] },
+					input: localizedObject,
+					options: { fallbackLocale: 'it' },
+					expected: null,
+				},
+				{
+					name: 'explicit fallback null value returns null',
+					config: { currentLocale: 'fr', supportedLocales: ['en', 'ar', 'fr', 'nullable'] },
+					input: localizedObject,
+					options: { fallbackLocale: 'nullable' },
+					expected: null,
+				},
+				{
+					name: 'explicit fallback empty string returns empty string',
+					config: { currentLocale: 'fr', supportedLocales: ['en', 'ar', 'fr', 'empty'] },
+					input: localizedObject,
+					options: { fallbackLocale: 'empty' },
+					expected: '',
+				},
+				{
+					name: 'explicit fallback with null input returns null',
+					config: { currentLocale: 'en', supportedLocales: ['en'] },
+					input: null,
+					options: { fallbackLocale: 'en' },
+					expected: null,
+				},
+				{
+					name: 'explicit fallback with undefined input returns null',
+					config: { currentLocale: 'en', supportedLocales: ['en'] },
+					input: undefined,
+					options: { fallbackLocale: 'en' },
+					expected: null,
+				},
+				{
+					name: 'empty options without config fallback returns null',
+					config: { currentLocale: 'fr', supportedLocales: ['en', 'ar', 'fr'] },
+					input: localizedObject,
+					options: {},
+					expected: null,
+				},
+
+				// Per-call useFallbackLocale
+				{
+					name: 'per-call useFallbackLocale true uses config fallbackLocale',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'en',
+						supportedLocales: ['en', 'ar', 'fr'],
+					},
+					input: localizedObject,
+					options: { useFallbackLocale: true },
+					expected: 'Hello',
+				},
+				{
+					name: 'per-call useFallbackLocale false ignores config fallbackLocale',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'en',
+						supportedLocales: ['en', 'ar', 'fr'],
+					},
+					input: localizedObject,
+					options: { useFallbackLocale: false },
+					expected: null,
+				},
+				{
+					name: 'per-call useFallbackLocale true with null current value',
+					config: {
+						currentLocale: 'nullable',
+						fallbackLocale: 'ar',
+						supportedLocales: ['ar', 'nullable'],
+					},
+					input: localizedObject,
+					options: { useFallbackLocale: true },
+					expected: 'مرحبا',
+				},
+				{
+					name: 'per-call useFallbackLocale true but config fallback missing',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'it',
+						supportedLocales: ['en', 'ar', 'fr', 'it'],
+					},
+					input: localizedObject,
+					options: { useFallbackLocale: true },
+					expected: null,
+				},
+				{
+					name: 'explicit fallbackLocale wins over per-call useFallbackLocale',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'en',
+						supportedLocales: ['en', 'ar', 'fr', 'de'],
+					},
+					input: localizedObject,
+					options: { fallbackLocale: 'de', useFallbackLocale: true },
+					expected: 'Hallo',
+				},
+				{
+					name: 'per-call useFallbackLocale true with null input',
+					config: {
+						currentLocale: 'en',
+						fallbackLocale: 'en',
+						supportedLocales: ['en'],
+					},
+					input: null,
+					options: { useFallbackLocale: true },
+					expected: null,
+				},
+
+				// Config-level useFallbackLocale
+				{
+					name: 'config useFallbackLocale true falls back automatically',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'en',
+						useFallbackLocale: true,
+						supportedLocales: ['en', 'ar', 'fr'],
+					},
+					input: localizedObject,
+					expected: 'Hello',
+				},
+				{
+					name: 'config useFallbackLocale false does not fall back',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'en',
+						useFallbackLocale: false,
+						supportedLocales: ['en', 'ar', 'fr'],
+					},
+					input: localizedObject,
+					expected: null,
+				},
+				{
+					name: 'config useFallbackLocale true with empty options still falls back',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'ar',
+						useFallbackLocale: true,
+						supportedLocales: ['en', 'ar', 'fr'],
+					},
+					input: localizedObject,
+					options: {},
+					expected: 'مرحبا',
+				},
+				{
+					name: 'config useFallbackLocale true prefers current locale',
+					config: {
+						currentLocale: 'de',
+						fallbackLocale: 'en',
+						useFallbackLocale: true,
+						supportedLocales: ['en', 'ar', 'de'],
+					},
+					input: localizedObject,
+					expected: 'Hallo',
+				},
+				{
+					name: 'config useFallbackLocale true with null current value',
+					config: {
+						currentLocale: 'nullable',
+						fallbackLocale: 'en',
+						useFallbackLocale: true,
+						supportedLocales: ['en', 'nullable'],
+					},
+					input: localizedObject,
+					expected: 'Hello',
+				},
+				{
+					name: 'config useFallbackLocale true with empty string current value',
+					config: {
+						currentLocale: 'empty',
+						fallbackLocale: 'en',
+						useFallbackLocale: true,
+						supportedLocales: ['en', 'empty'],
+					},
+					input: localizedObject,
+					expected: '',
+				},
+				{
+					name: 'per-call false overrides config true',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'en',
+						useFallbackLocale: true,
+						supportedLocales: ['en', 'ar', 'fr'],
+					},
+					input: localizedObject,
+					options: { useFallbackLocale: false },
+					expected: null,
+				},
+				{
+					name: 'per-call true overrides config false',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'de',
+						useFallbackLocale: false,
+						supportedLocales: ['en', 'ar', 'fr', 'de'],
+					},
+					input: localizedObject,
+					options: { useFallbackLocale: true },
+					expected: 'Hallo',
+				},
+				{
+					name: 'explicit fallbackLocale wins over config useFallbackLocale',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'en',
+						useFallbackLocale: true,
+						supportedLocales: ['en', 'ar', 'fr', 'de'],
+					},
+					input: localizedObject,
+					options: { fallbackLocale: 'de' },
+					expected: 'Hallo',
+				},
+				{
+					name: 'config useFallbackLocale true with null input',
+					config: {
+						currentLocale: 'en',
+						fallbackLocale: 'en',
+						useFallbackLocale: true,
+						supportedLocales: ['en'],
+					},
+					input: null,
+					expected: null,
+				},
+				{
+					name: 'config useFallbackLocale true with undefined input',
+					config: {
+						currentLocale: 'en',
+						fallbackLocale: 'en',
+						useFallbackLocale: true,
+						supportedLocales: ['en'],
+					},
+					input: undefined,
+					expected: null,
+				},
+				{
+					name: 'config useFallbackLocale true but fallback key missing',
+					config: {
+						currentLocale: 'fr',
+						fallbackLocale: 'it',
+						useFallbackLocale: true,
+						supportedLocales: ['en', 'ar', 'fr', 'it'],
+					},
+					input: localizedObject,
+					expected: null,
+				},
+				{
+					name: 'both current and fallback values null with config enabled',
+					config: {
+						currentLocale: 'nullable',
+						fallbackLocale: 'nullable',
+						useFallbackLocale: true,
+						supportedLocales: ['nullable'],
+					},
+					input: { nullable: null },
+					expected: null,
+				},
+			]
+
+			for (const testCase of cases) {
+				const i18xs = new I18XS({
+					localesDir: dir,
+					currentLocale: testCase.config.currentLocale,
+					fallbackLocale: testCase.config.fallbackLocale ?? 'en',
+					useFallbackLocale: testCase.config.useFallbackLocale ?? false,
+					supportedLocales: testCase.config.supportedLocales,
+				})
+
+				const result = i18xs.getLocalizedValue(testCase.input, testCase.options)
+				expect(result).toBe(testCase.expected)
+			}
+		})
+
+		it('Should return the correct response after locale changes', async () => {
+			const i18xs = new I18XS({
+				localesDir: dir,
+				currentLocale: 'en',
+				fallbackLocale: 'en',
+				useFallbackLocale: true,
+				supportedLocales: ['en', 'ar', 'de', 'fr'],
+			})
+
+			const values = {
+				en: 'Hello',
+				ar: 'مرحبا',
+				de: 'Hallo',
+			}
+
+			expect(i18xs.getLocalizedValue(values)).toBe('Hello')
+
+			i18xs.changeCurrentLocale('ar')
+			expect(i18xs.getLocalizedValue(values)).toBe('مرحبا')
+
+			i18xs.changeCurrentLocale('de')
+			expect(i18xs.getLocalizedValue(values)).toBe('Hallo')
+
+			i18xs.changeCurrentLocale('fr')
+			expect(i18xs.getLocalizedValue(values)).toBe('Hello')
+
+			expect(i18xs.getLocalizedValue(values, { useFallbackLocale: false })).toBe(null)
+			expect(i18xs.getLocalizedValue(values, { fallbackLocale: 'ar' })).toBe('مرحبا')
+			expect(i18xs.getLocalizedValue(values, { fallbackLocale: 'de' })).toBe('Hallo')
+		})
+
+		it('Should return the correct response when only one locale key exists', async () => {
+			const i18xs = new I18XS({
+				localesDir: dir,
+				currentLocale: 'ar',
+				fallbackLocale: 'en',
+				useFallbackLocale: true,
+				supportedLocales: ['en', 'ar'],
+			})
+
+			expect(i18xs.getLocalizedValue({ en: 'Only English' })).toBe('Only English')
+			expect(i18xs.getLocalizedValue({ ar: 'فقط عربي' })).toBe('فقط عربي')
+			expect(i18xs.getLocalizedValue({ de: 'Nur Deutsch' })).toBe(null)
+			expect(i18xs.getLocalizedValue({ de: 'Nur Deutsch' }, { fallbackLocale: 'de' })).toBe(
+				'Nur Deutsch'
+			)
+			expect(i18xs.getLocalizedValue({ en: null })).toBe(null)
+			expect(i18xs.getLocalizedValue({ en: '' })).toBe('')
+		})
+
+		it('Should return the correct response for whitespace and special characters', async () => {
+			const i18xs = new I18XS({
+				localesDir: dir,
+				currentLocale: 'en',
+				fallbackLocale: 'en',
+				useFallbackLocale: true,
+				supportedLocales: ['en', 'ar', 'fr'],
+			})
+
+			const values = {
+				en: '  spaced  ',
+				ar: '🎉 احتفال',
+				fr: 'Café & Thé',
+			}
+
+			expect(i18xs.getLocalizedValue(values)).toBe('  spaced  ')
+
+			i18xs.changeCurrentLocale('ar')
+			expect(i18xs.getLocalizedValue(values)).toBe('🎉 احتفال')
+
+			i18xs.changeCurrentLocale('fr')
+			expect(i18xs.getLocalizedValue(values)).toBe('Café & Thé')
+
+			i18xs.configure({
+				localesDir: dir,
+				currentLocale: 'zh',
+				fallbackLocale: 'en',
+				useFallbackLocale: true,
+				supportedLocales: ['en', 'ar', 'fr', 'zh'],
+			})
+			expect(i18xs.getLocalizedValue(values)).toBe('  spaced  ')
+		})
 	})
 })
 
