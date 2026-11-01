@@ -1,14 +1,19 @@
 {
 	"name": "i18xs",
-	"version": "2.7.0",
+	"version": "2.8.0",
 	"description": "A lightweight and simple package for i18n and localization for Node.js, Bun, React Native, and browsers",
 	"main": "build/index.js",
 	"types": "build/index.d.ts",
 	"type": "module",
 	"react-native": "build/index.js",
+	"imports": {
+		"#types/*": {
+			"types": "./build/types/*.d.ts"
+		}
+	},
 	"scripts": {
 		"clean": "rm -rf build && rm -rf tsconfig.tsbuildinfo && echo '✅ Clean Completed'",
-		"build": "bun run clean && tsc && echo '✅ Build Completed' && exit",
+		"build": "bun run clean && bun build src/index.ts --target browser --format esm --outfile build/index.js --define require=require && tsc --emitDeclarationOnly && echo '✅ Build Completed'",
 		"lint": "eslint . --ext=.ts",
 		"format": "prettier --write .",
 		"test": "bun test",
@@ -39,7 +44,8 @@
 	},
 	"homepage": "https://github.com/3adel-bassiony/i18xs#readme",
 	"devDependencies": {
-		"@types/bun": "^1.3.2",
+		"@types/bun": "^1.4.4",
+		"@types/node": "^26.6.6",
 		"@typescript-eslint/eslint-plugin": "^6.15.0",
 		"eslint": "^8.56.0",
 		"eslint-plugin-import": "^2.29.1",

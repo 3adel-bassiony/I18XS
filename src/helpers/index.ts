@@ -1,16 +1,19 @@
-/**
- * Checks if the current environment is Node.js by verifying the presence of Node-specific globals.
- *
- * @returns {boolean} True if running in a Node.js environment, false otherwise.
- *
- * @example
- * const isNode = isNodeJS();
- * console.log(isNode); // true in Node.js, false in browser
- */
-export function isNodeJS(): boolean {
-	try {
-		return typeof process !== 'undefined' && process.versions != null && process.versions.node != null
-	} catch {
-		return false
-	}
-}
+export { clearLocalizationCache } from './clearLocalizationCache'
+export { cloneCatalog } from './cloneCatalog'
+export { cloneLocalization } from './cloneLocalization'
+export { combineCatalogs } from './combineCatalogs'
+export { copyCatalog } from './copyCatalog'
+export { emptyRecord } from './emptyRecord'
+export { freezeLocalization } from './freezeLocalization'
+export { hasOwn } from './hasOwn'
+export { initializeFileSystem } from './initializeFileSystem'
+export { isNodeJS } from './isNodeJS'
+export { isObject } from './isObject'
+export { loadCatalog } from './loadCatalog'
+export { lookup } from './lookup'
+export { mergeInto } from './mergeInto'
+export { readLocalization } from './readLocalization'
+export { remember } from './remember'
+export { fileSystem, setFileSystem } from './fileSystem'
+export type { FileSystem } from './fileSystem'
+export type { Catalog } from '../types/Catalog'

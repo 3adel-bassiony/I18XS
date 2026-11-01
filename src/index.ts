@@ -1,41 +1,24 @@
-import type { PathOrFileDescriptor } from 'fs'
+import {
+	clearLocalizationCache,
+	cloneCatalog,
+	combineCatalogs,
+	hasOwn,
+	initializeFileSystem,
+	isNodeJS,
+	loadCatalog,
+	lookup,
+	readLocalization,
+	type Catalog,
+} from './helpers'
 
-import { isNodeJS } from './helpers'
-import { Config } from './types/Config'
-import { Localization } from './types/Localization'
-import { LocalizationData } from './types/LocalizationData'
-import { LocalizedValue } from './types/LocalizedValue'
+import type { Config } from '#types/Config'
+import type { Localization } from '#types/Localization'
+import type { LocalizationData } from '#types/LocalizationData'
+import type { LocalizedValue } from '#types/LocalizedValue'
 
-// Conditionally import fs only in Node.js environments (not React Native)
-type ReadFileSyncFn = (path: PathOrFileDescriptor, encoding: BufferEncoding) => string
-type ExistsSyncFn = (path: PathOrFileDescriptor) => boolean
-type ReaddirSyncFn = (path: PathOrFileDescriptor) => string[]
+export type { Config } from '#types/Config'
 
-let readFileSync: ReadFileSyncFn | undefined
-let existsSync: ExistsSyncFn | undefined
-let readdirSync: ReaddirSyncFn | undefined
-
-// Synchronously load fs module for Node.js/Bun environments
-function loadFileSystem(): void {
-	if (isNodeJS() && typeof process !== 'undefined' && process.versions?.node) {
-		try {
-			// Use require for synchronous loading in Node.js/Bun
-			// eslint-disable-next-line @typescript-eslint/no-var-requires
-			const fs = require('fs')
-			readFileSync = fs.readFileSync as ReadFileSyncFn
-			existsSync = fs.existsSync as ExistsSyncFn
-			readdirSync = fs.readdirSync as ReaddirSyncFn
-		} catch (error) {
-			// fs not available (React Native, browser, etc.)
-			readFileSync = undefined
-			existsSync = undefined
-			readdirSync = undefined
-		}
-	}
-}
-
-// Load fs immediately
-loadFileSystem()
+initializeFileSystem()
 
 export default class I18XS {
 	/**
@@ -98,6 +81,9 @@ export default class I18XS {
 	 */
 	protected _preloadLocalizations: boolean = true
 
+	private _cacheTtl: number = 0
+	private _inputLocalizations: Catalog = {}
+
 	/**
 	 * Initializes a new instance of the I18XS class.
 	 * @param {Config} config - The configuration options for I18XS.
@@ -131,12 +117,13 @@ export default class I18XS {
 		showMissingIdentifierMessage = false,
 		missingIdentifierMessage = 'Missing_Localization_Identifier',
 		rtlLocales = ['ar', 'he', 'fa', 'ur', 'ps', 'ckb', 'syr', 'dv', 'ug'],
-		localesDir = isNodeJS() ? `${process.cwd()}/src/locales` : '',
+		localesDir = isNodeJS() && typeof process.cwd === 'function' ? `${process.cwd()}/src/locales` : '',
 		featuresDir = '',
 		showLogs = false,
 		localizations = {},
 		preloadLocalizations = true,
-	}: Config) {
+		cacheTtl = 0,
+	}: Config = {}) {
 		this.configure({
 			localesDir,
 			featuresDir,
@@ -150,6 +137,7 @@ export default class I18XS {
 			showLogs,
 			localizations,
 			preloadLocalizations,
+			cacheTtl,
 		})
 	}
 
@@ -162,7 +150,7 @@ export default class I18XS {
 	 * console.log(locales); // ['en', 'fr', 'de']
 	 */
 	get supportedLocales(): string[] {
-		return this._supportedLocales
+		return [...this._supportedLocales]
 	}
 
 	/**
@@ -208,9 +196,9 @@ export default class I18XS {
 	 * @returns {boolean} True if the current locale is LTR, false otherwise.
 	 * @example
 	 * const i18xs = new I18XS();
-	 * i18xs.setLocale('en');
+	 * i18xs.changeCurrentLocale('en');
 	 * console.log(i18xs.isCurrentLocaleLTR); // Output: true
-	 * i18xs.setLocale('ar');
+	 * i18xs.changeCurrentLocale('ar');
 	 * console.log(i18xs.isCurrentLocaleLTR); // Output: false
 	 */
 	get isCurrentLocaleLTR(): boolean {
@@ -222,9 +210,9 @@ export default class I18XS {
 	 * @returns {boolean} True if the current locale is RTL, false otherwise.
 	 * @example
 	 * const i18xs = new I18XS();
-	 * i18xs.setLocale('ar');
+	 * i18xs.changeCurrentLocale('ar');
 	 * console.log(i18xs.isCurrentLocaleRTL); // Output: true
-	 * i18xs.setLocale('en');
+	 * i18xs.changeCurrentLocale('en');
 	 * console.log(i18xs.isCurrentLocaleRTL); // Output: false
 	 */
 	get isCurrentLocaleRTL(): boolean {
@@ -277,23 +265,30 @@ export default class I18XS {
 		showLogs = false,
 		localizations = {},
 		preloadLocalizations = true,
-	}: Config): I18XS {
+		cacheTtl = 0,
+	}: Config = {}): I18XS {
+		if (typeof cacheTtl !== 'number' || Number.isNaN(cacheTtl) || cacheTtl < 0) {
+			throw new RangeError('cacheTtl must be a non-negative number of seconds')
+		}
+
+		this._cacheTtl = cacheTtl
 		this._localesDir = localesDir
 		this._featuresDir = featuresDir
-		this._supportedLocales = supportedLocales
+		this._supportedLocales = [...supportedLocales]
 		this._currentLocale = currentLocale
 		this._fallbackLocale = fallbackLocale
 		this._useFallbackLocale = useFallbackLocale
 		this._showMissingIdentifierMessage = showMissingIdentifierMessage
 		this._missingIdentifierMessage = missingIdentifierMessage
-		this._rtlLocales = rtlLocales
+		this._rtlLocales = [...rtlLocales]
 		this._showLogs = showLogs
-		this._localizations = localizations
+		this._inputLocalizations = cloneCatalog(localizations)
+		this._localizations = combineCatalogs(this._inputLocalizations, {})
 		this._preloadLocalizations = preloadLocalizations
 
 		// Preload all localizations if enabled
 		if (this._preloadLocalizations) {
-			this.preloadAllLocalizations()
+			this.loadPreloadedLocalizations()
 		}
 
 		return this
@@ -316,342 +311,52 @@ export default class I18XS {
 		}
 	}
 
-	/**
-	 * Checks if the current environment is Node.js
-	 * @returns {boolean} True if running in Node.js, false otherwise
-	 */
-	private isNodeJS(): boolean {
-		return isNodeJS()
+	/** Clears shared file/catalog caches. Existing instances retain their snapshots. */
+	static clearCache(): void {
+		clearLocalizationCache()
 	}
 
-	/**
-	 * Caches a localization in memory for the specified locale and file name.
-	 * This improves performance by avoiding repeated disk reads.
-	 * @param locale - The locale code (e.g., 'en', 'ar')
-	 * @param fileName - The localization file name
-	 * @param localization - The localization data to cache
-	 */
-	private cacheLocalization(locale: string, fileName: string, localization: Localization): void {
-		if (!this._localizations[locale]) {
-			this._localizations[locale] = {}
-		}
-		this._localizations[locale][fileName] = localization
-
-		if (this._showLogs) {
-			console.debug({ message: 'Cached localization', locale, fileName })
-		}
-	}
-
-	/**
-	 * Preloads all localization files from both traditional and feature-based structures.
-	 * This eliminates runtime file I/O and improves translation performance.
-	 * Only works in Node.js/Bun environments with file system access.
-	 *
-	 * @example
-	 * // Automatic preloading during initialization (default)
-	 * const i18n = new I18XS({ preloadLocalizations: true });
-	 *
-	 * // Manual preloading
-	 * i18n.preloadAllLocalizations();
-	 */
+	/** Reloads this instance from disk, including removed files and keys. */
 	preloadAllLocalizations(): void {
-		// Skip if fs is not available (React Native, browser, etc.)
-		if (!readFileSync || !existsSync || !readdirSync) {
-			if (this._showLogs) {
-				console.debug('File system not available, skipping preload (React Native/Browser)')
-			}
-			return
-		}
-
-		try {
-			// Preload from traditional structure (locales/{locale}/{file}.json)
-			if (this._localesDir && existsSync(this._localesDir)) {
-				this.preloadFromTraditionalStructure()
-			}
-
-			// Preload from feature-based structure (features/{feature}/locales/{locale}.json)
-			if (this._featuresDir && existsSync(this._featuresDir)) {
-				this.preloadFromFeatureStructure()
-			}
-
-			if (this._showLogs) {
-				console.debug({
-					message: 'Preloaded all localizations',
-					locales: Object.keys(this._localizations),
-					files: Object.keys(this._localizations[this._currentLocale] || {}),
-				})
-			}
-		} catch (error) {
-			if (this._showLogs) {
-				console.error({ message: 'Failed to preload localizations', error })
-			}
-		}
+		this.loadPreloadedLocalizations(true)
 	}
 
-	/**
-	 * Preloads all localization files from traditional structure: locales/{locale}/{file}.json
-	 */
-	private preloadFromTraditionalStructure(): void {
-		if (!readdirSync || !existsSync) return
-
-		for (const locale of this._supportedLocales) {
-			const localePath = `${this._localesDir}/${locale}`
-
-			if (!existsSync(localePath)) {
-				continue
-			}
-
-			try {
-				const files = readdirSync(localePath)
-
-				// Initialize merged localization for this locale if not exists
-				if (!this._localizations[locale]) {
-					this._localizations[locale] = {}
-				}
-
-				// Create a single merged object for all files
-				if (!this._localizations[locale]['__merged__']) {
-					this._localizations[locale]['__merged__'] = {}
-				}
-
-				for (const file of files) {
-					if (file.endsWith('.json')) {
-						const fileName = file.replace('.json', '')
-						const filePath = `${localePath}/${file}`
-						const localization = this.loadFileContent(filePath)
-
-						if (localization) {
-							// Cache with original file name for backward compatibility
-							this.cacheLocalization(locale, fileName, localization)
-
-							// Merge into the unified localization object (last-load-wins)
-							this._localizations[locale]['__merged__'] = {
-								...this._localizations[locale]['__merged__'],
-								...localization,
-							}
-
-							if (this._showLogs) {
-								console.debug({ message: 'Merged localization', locale, fileName })
-							}
-						}
-					}
-				}
-			} catch (error) {
-				if (this._showLogs) {
-					console.error({ message: 'Failed to preload from traditional structure', locale, error })
-				}
-			}
-		}
+	private loadPreloadedLocalizations(refresh = false): void {
+		const disk = loadCatalog(
+			{
+				localesDir: this._localesDir,
+				featuresDir: this._featuresDir,
+				locales: [...new Set([...this._supportedLocales, this._fallbackLocale])],
+				cacheTtl: this._cacheTtl,
+				showLogs: this._showLogs,
+			},
+			refresh
+		)
+		this._localizations = combineCatalogs(this._inputLocalizations, disk)
 	}
 
-	/**
-	 * Preloads all localization files from feature-based structure: features/{feature}/locales/{locale}.json
-	 */
-	private preloadFromFeatureStructure(): void {
-		if (!readdirSync || !existsSync) return
+	private loadLocalization(fileName: string, locale: string): Localization | undefined {
+		const files = this._localizations[locale]
+		if (files && hasOwn(files, fileName)) return files[fileName]
+		if (this._preloadLocalizations || !fileName || /[/\\]/.test(fileName)) return undefined
+		if (!this._supportedLocales.includes(locale) && locale !== this._fallbackLocale) return undefined
 
-		try {
-			const features = readdirSync(this._featuresDir)
-
-			for (const feature of features) {
-				const featurePath = `${this._featuresDir}/${feature}`
-				const localesPath = `${featurePath}/locales`
-
-				if (!existsSync(localesPath)) {
-					continue
-				}
-
-				for (const locale of this._supportedLocales) {
-					const localeFilePath = `${localesPath}/${locale}.json`
-
-					if (existsSync(localeFilePath)) {
-						const localization = this.loadFileContent(localeFilePath)
-
-						if (localization) {
-							// Cache with original feature name for backward compatibility
-							this.cacheLocalization(locale, feature, localization)
-
-							// Initialize merged localization for this locale if not exists
-							if (!this._localizations[locale]) {
-								this._localizations[locale] = {}
-							}
-
-							// Create a single merged object for all files
-							if (!this._localizations[locale]['__merged__']) {
-								this._localizations[locale]['__merged__'] = {}
-							}
-
-							// Merge into the unified localization object (last-load-wins)
-							this._localizations[locale]['__merged__'] = {
-								...this._localizations[locale]['__merged__'],
-								...localization,
-							}
-
-							if (this._showLogs) {
-								console.debug({ message: 'Merged localization', locale, feature })
-							}
-						}
-					}
-				}
-			}
-		} catch (error) {
-			if (this._showLogs) {
-				console.error({ message: 'Failed to preload from feature structure', error })
-			}
+		const traditional = this._localesDir
+			? readLocalization(`${this._localesDir}/${locale}/${fileName}.json`, this._cacheTtl, this._showLogs)
+			: undefined
+		let localization = traditional
+		if (!localization && this._featuresDir) {
+			localization = readLocalization(
+				`${this._featuresDir}/${fileName}/locales/${locale}.json`,
+				this._cacheTtl,
+				this._showLogs
+			)
 		}
-	}
-
-	/**
-	 * Loads the content of a localization file synchronously.
-	 * Uses Node.js/Bun's fs module for synchronous file operations.
-	 * Not available in React Native - use in-memory localizations instead.
-	 */
-	private loadFileContent(filePath: string): Localization | undefined {
-		// Skip if fs is not available (React Native, browser, etc.)
-		if (!readFileSync || !existsSync) {
-			if (this._showLogs) {
-				console.debug('File system is not available in this environment (React Native/Browser)')
-			}
-			return undefined
-		}
-
-		try {
-			// Check if file exists
-			if (!existsSync(filePath)) {
-				return undefined
-			}
-
-			// Read and parse JSON synchronously
-			const content = readFileSync(filePath, 'utf8')
-			const localization = JSON.parse(content)
-
-			if (this._showLogs) {
-				console.debug({ message: 'Loaded file content', filePath, localization })
-			}
-
-			return localization
-		} catch (error) {
-			if (this._showLogs) {
-				console.error({ message: 'Failed to load localization file content', error })
-			}
-			return undefined
-		}
-	}
-
-	/**
-	 * Loads the localization from memory or file system.
-	 * Performance-optimized to only check configured directories:
-	 * - If only localesDir: Traditional structure only
-	 * - If only featuresDir: Feature-based structure only
-	 * - If both: Tries traditional first, then feature-based
-	 *
-	 * Note: File system operations only work in Node.js/Bun.
-	 * For React Native/Browser, use in-memory localizations.
-	 */
-	private loadLocalization(fileName: string): Localization | undefined {
-		// If preloading is enabled, always try to use the merged localization first
-		if (this._preloadLocalizations) {
-			if (this._localizations[this._currentLocale]?.['__merged__']) {
-				return this._localizations[this._currentLocale]['__merged__']
-			} else if (this._localizations[this._fallbackLocale]?.['__merged__']) {
-				return this._localizations[this._fallbackLocale]['__merged__']
-			}
-		}
-
-		// Fall back to individual file loading (backward compatibility for lazy loading)
-		if (this._localizations[this._currentLocale]?.[fileName]) {
-			return this._localizations[this._currentLocale][fileName]
-		} else if (this._localizations[this._fallbackLocale]?.[fileName]) {
-			return this._localizations[this._fallbackLocale][fileName]
-		}
-
-		// Skip file system if fs is not available (React Native, browser, etc.)
-		if (!readFileSync || !existsSync) {
-			if (this._showLogs) {
-				console.debug('File system not available, using in-memory localizations only (React Native/Browser)')
-			}
-			return undefined
-		}
-
-		try {
-			const hasLocalesDir = !!this._localesDir
-			const hasFeaturesDir = !!this._featuresDir
-
-			// Performance optimization: Only check configured directories
-			if (hasLocalesDir && !hasFeaturesDir) {
-				// Only traditional structure configured - check only that
-				return this.loadFromTraditionalStructure(fileName)
-			} else if (hasFeaturesDir && !hasLocalesDir) {
-				// Only feature-based structure configured - check only that
-				return this.loadFromFeatureStructure(fileName)
-			} else if (hasLocalesDir && hasFeaturesDir) {
-				// Both configured - try traditional first, then feature-based
-				const localization = this.loadFromTraditionalStructure(fileName)
-				if (localization) {
-					return localization
-				}
-				return this.loadFromFeatureStructure(fileName)
-			}
-
-			if (this._showLogs) {
-				console.debug('No localesDir or featuresDir configured')
-			}
-
-			return undefined
-		} catch (error) {
-			if (this._showLogs) {
-				console.error({ message: 'Failed to load localization', error })
-			}
-			return undefined
-		}
-	}
-
-	/**
-	 * Loads from traditional structure: locales/{locale}/{file}.json
-	 */
-	private loadFromTraditionalStructure(fileName: string): Localization | undefined {
-		const filePath = `${this._localesDir}/${this._currentLocale}/${fileName}.json`
-		const fallbackFilePath = `${this._localesDir}/${this._fallbackLocale}/${fileName}.json`
-
-		let localization = this.loadFileContent(filePath)
 		if (localization) {
-			// Cache the loaded localization
-			this.cacheLocalization(this._currentLocale, fileName, localization)
-			return localization
+			const localeFiles = this._localizations[locale] ?? (this._localizations[locale] = Object.create(null))
+			localeFiles[fileName] = localization
 		}
-
-		localization = this.loadFileContent(fallbackFilePath)
-		if (localization) {
-			// Cache the loaded localization
-			this.cacheLocalization(this._fallbackLocale, fileName, localization)
-			return localization
-		}
-
-		return undefined
-	}
-
-	/**
-	 * Loads from feature-based structure: features/{feature}/locales/{locale}.json
-	 */
-	private loadFromFeatureStructure(fileName: string): Localization | undefined {
-		const featureFilePath = `${this._featuresDir}/${fileName}/locales/${this._currentLocale}.json`
-		const featureFallbackPath = `${this._featuresDir}/${fileName}/locales/${this._fallbackLocale}.json`
-
-		let localization = this.loadFileContent(featureFilePath)
-		if (localization) {
-			// Cache the loaded localization
-			this.cacheLocalization(this._currentLocale, fileName, localization)
-			return localization
-		}
-
-		localization = this.loadFileContent(featureFallbackPath)
-		if (localization) {
-			// Cache the loaded localization
-			this.cacheLocalization(this._fallbackLocale, fileName, localization)
-			return localization
-		}
-
-		return undefined
+		return localization
 	}
 
 	/**
@@ -711,19 +416,7 @@ export default class I18XS {
 	 * console.log(exists); // Output: true
 	 */
 	hasIdentifier(identifier: string): boolean {
-		const { fileName } = this.splitIdentifier(identifier)
-
-		if (!fileName) return false
-
-		const localization = this.loadLocalization(fileName)
-
-		if (!localization) return false
-
-		const message = this.searchForLocalization(identifier, localization)
-
-		if (!message) return false
-
-		return true
+		return this.resolveMessage(identifier) !== undefined
 	}
 
 	/**
@@ -742,13 +435,11 @@ export default class I18XS {
 	 */
 	replaceData(message: string, data?: LocalizationData): string {
 		if (!data) return message
-
-		return Object.keys(data).reduce((acc, key) => {
-			const value = data?.[key]
-			// Handle null, undefined, and other non-string values safely
-			const replacement = value !== null && value !== undefined ? String(value) : ''
-			return acc.replace(new RegExp(`{${key}}`, 'g'), replacement)
-		}, message)
+		return message.replace(/\{([^{}]*)\}/g, (placeholder, key: string) => {
+			if (!hasOwn(data, key)) return placeholder
+			const value = data[key]
+			return value === null || value === undefined ? '' : String(value)
+		})
 	}
 
 	/**
@@ -768,22 +459,7 @@ export default class I18XS {
 	 */
 	searchForLocalization(identifier: string, localization: Localization): string | Localization | undefined {
 		const { keys } = this.splitIdentifier(identifier)
-
-		// First, try to find the key as a flat string with dots
-		// e.g., "api.error.message" as a single key
-		const flatKey = keys.join('.')
-		if (typeof localization === 'object' && flatKey in localization) {
-			return localization[flatKey]
-		}
-
-		// If not found as flat key, try nested navigation
-		// e.g., localization['api']['error']['message']
-		const result = keys.reduce<Localization | string | undefined>((acc, key) => {
-			if (acc === undefined) return undefined
-			return typeof acc === 'object' ? acc[key] : acc
-		}, localization)
-
-		return result
+		return lookup(identifier, localization) ?? lookup(keys.join('.'), localization)
 	}
 
 	/**
@@ -811,71 +487,30 @@ export default class I18XS {
 	 * console.log(message); // Output: "Welcome, John!"
 	 */
 	formatMessage(identifier: string, data?: LocalizationData): string {
-		// When preloading is enabled, try merged localization first (no file prefix needed)
-		if (this._preloadLocalizations) {
-			const mergedLocalization =
-				this._localizations[this._currentLocale]?.['__merged__'] ||
-				this._localizations[this._fallbackLocale]?.['__merged__']
-
-			if (mergedLocalization) {
-				// Try to find the key directly in merged localizations (without file prefix)
-				let message = this.searchForLocalizationDirect(identifier, mergedLocalization)
-
-				// If not found and identifier contains a dot, try without the file prefix (backward compatibility)
-				// e.g., 'general.Hello_World' → 'Hello_World'
-				if (!message && identifier.includes('.')) {
-					const { keys } = this.splitIdentifier(identifier)
-					const identifierWithoutFile = keys.join('.')
-
-					if (identifierWithoutFile) {
-						message = this.searchForLocalizationDirect(identifierWithoutFile, mergedLocalization)
-					}
-				}
-
-				if (message) {
-					return this.formatMessageValue(message, data)
-				}
-
-				// Key not found in merged localizations
-				if (this._showMissingIdentifierMessage) {
-					return this._missingIdentifierMessage
-				}
-				return identifier
-			}
-		}
-
-		// Fall back to traditional file-based approach
-		const { fileName } = this.splitIdentifier(identifier)
-
-		if (!fileName) {
-			if (this._showMissingIdentifierMessage) {
-				return this._missingIdentifierMessage
-			}
-
-			return identifier
-		}
-
-		const localization = this.loadLocalization(fileName)
-
-		if (!localization) {
-			if (this._showMissingIdentifierMessage) {
-				return this._missingIdentifierMessage
-			}
-
-			return identifier
-		}
-
-		const message = this.searchForLocalization(identifier, localization)
-
-		if (!message) {
-			if (this._showMissingIdentifierMessage) {
-				return this._missingIdentifierMessage
-			}
-
-			return identifier
-		}
-
+		const message = this.resolveMessage(identifier)
+		if (message === undefined)
+			return this._showMissingIdentifierMessage ? this._missingIdentifierMessage : identifier
 		return this.formatMessageValue(message, data)
+	}
+
+	private resolveMessage(identifier: string): string | Localization | undefined {
+		if (!identifier) return undefined
+		const { fileName, keys } = this.splitIdentifier(identifier)
+		for (const locale of new Set([this._currentLocale, this._fallbackLocale])) {
+			if (keys.length > 0) {
+				const file = this.loadLocalization(fileName, locale)
+				if (file) {
+					const message = lookup(keys.join('.'), file) ?? lookup(identifier, file)
+					if (message !== undefined) return message
+				}
+			}
+			if (this._preloadLocalizations) {
+				const merged = this._localizations[locale]?.__merged__
+				const message = merged ? lookup(identifier, merged) : undefined
+				if (message !== undefined) return message
+			}
+		}
+		return undefined
 	}
 
 	/**
@@ -900,14 +535,10 @@ export default class I18XS {
 			let count = 0
 			if (data) {
 				// Prefer explicit 'count' key
-				if ('count' in data && typeof data.count === 'number') {
+				if (hasOwn(data, 'count') && typeof data.count === 'number') {
 					count = data.count
 				} else {
-					// Fall back to first key's value if it's a number
-					const firstKey = Object.keys(data)[0]
-					if (firstKey && typeof data[firstKey] === 'number') {
-						count = data[firstKey] as number
-					}
+					count = Object.values(data).find((value): value is number => typeof value === 'number') ?? 0
 				}
 			}
 
@@ -929,12 +560,12 @@ export default class I18XS {
 			}
 
 			// Fall back to 'other' if specific form doesn't exist
-			if (!selectedForm) {
+			if (selectedForm === undefined) {
 				selectedForm = message.other as string | undefined
 			}
 
 			// If still no form found, return error or empty
-			if (!selectedForm || typeof selectedForm !== 'string') {
+			if (typeof selectedForm !== 'string') {
 				if (this._showLogs) {
 					console.warn({ message: 'No valid plural form found', count, pluralData: message })
 				}
@@ -950,44 +581,15 @@ export default class I18XS {
 
 	/**
 	 * Checks if an object is a valid pluralization object.
-	 * A valid pluralization object should have at least 'other' property and be an object.
+	 * A valid pluralization object contains string-valued zero, one, two, or other forms.
 	 * @param obj - The object to check
 	 * @returns True if it's a valid pluralization object
 	 */
 	private isPluralizationObject(obj: Localization): boolean {
-		if (typeof obj !== 'object' || obj === null) {
-			return false
-		}
-
-		// Must have at least the 'other' key for plural forms
-		return 'other' in obj || 'zero' in obj || 'one' in obj || 'two' in obj
-	}
-
-	/**
-	 * Searches for a localization directly by identifier (without file prefix)
-	 * Supports nested keys with dots (e.g., "Bank_Accounts.Welcome_Message")
-	 * @param identifier - The full identifier (e.g., "Welcome_Message" or "Bank_Accounts.Welcome_Message")
-	 * @param localization - The merged localization object
-	 * @returns The localization value if found, otherwise undefined
-	 */
-	private searchForLocalizationDirect(
-		identifier: string,
-		localization: Localization
-	): string | Localization | undefined {
-		const keys = identifier.split('.')
-
-		// First, try to find the key as a flat string with dots
-		if (identifier in localization) {
-			return localization[identifier]
-		}
-
-		// If not found as flat key, try nested navigation
-		const result = keys.reduce<Localization | string | undefined>((acc, key) => {
-			if (acc === undefined) return undefined
-			return typeof acc === 'object' ? acc[key] : acc
-		}, localization)
-
-		return result
+		if (typeof obj !== 'object' || obj === null) return false
+		const forms = ['zero', 'one', 'two', 'other']
+		const entries = Object.entries(obj)
+		return entries.length > 0 && entries.every(([key, value]) => forms.includes(key) && typeof value === 'string')
 	}
 
 	/**
@@ -1074,22 +676,20 @@ export default class I18XS {
 	 * const localizedName = i18n.getLocalizedValue(name); // falls back to 'en' when missing
 	 */
 	getLocalizedValue(
-		localizedObject?: Record<string, string | null> | null,
+		localizedObject?: Record<string, string | null | undefined> | null,
 		options?: { fallbackLocale?: string; useFallbackLocale?: boolean }
 	): string | null {
 		if (!localizedObject) return null
 
-		const {
-			fallbackLocale: explicitFallbackLocale,
-			useFallbackLocale = this._useFallbackLocale,
-		} = options ?? {}
-		const fallbackLocale =
-			explicitFallbackLocale ?? (useFallbackLocale ? this._fallbackLocale : undefined)
+		const { fallbackLocale: explicitFallbackLocale, useFallbackLocale = this._useFallbackLocale } = options ?? {}
+		const fallbackLocale = explicitFallbackLocale ?? (useFallbackLocale ? this._fallbackLocale : undefined)
 
-		return (
-			localizedObject[this.currentLocale] ??
-			(fallbackLocale ? localizedObject[fallbackLocale] ?? null : null)
-		)
+		const currentValue = hasOwn(localizedObject, this.currentLocale)
+			? localizedObject[this.currentLocale]
+			: undefined
+		const fallbackValue =
+			fallbackLocale && hasOwn(localizedObject, fallbackLocale) ? localizedObject[fallbackLocale] : null
+		return currentValue ?? fallbackValue ?? null
 	}
 
 	/**
@@ -1257,25 +857,25 @@ export default class I18XS {
 	 *
 	 * @example
 	 * // Using with HTML
-	 * <html dir={i18n.getTextDirection()}>
+	 * <html dir={i18n.textDirection}>
 	 *
 	 * @example
 	 * // Using in React
 	 * function App() {
-	 *   const direction = i18n.getTextDirection()
+	 *   const direction = i18n.textDirection
 	 *   return <div dir={direction}>Content</div>
 	 * }
 	 *
 	 * @example
 	 * // Conditional styling
-	 * const marginStart = i18n.getTextDirection() === 'rtl' ? 'marginRight' : 'marginLeft'
+	 * const marginStart = i18n.textDirection === 'rtl' ? 'marginRight' : 'marginLeft'
 	 *
 	 * @example
 	 * i18n.changeCurrentLocale('en')
-	 * i18n.getTextDirection() // 'ltr'
+	 * i18n.textDirection // 'ltr'
 	 *
 	 * i18n.changeCurrentLocale('ar')
-	 * i18n.getTextDirection() // 'rtl'
+	 * i18n.textDirection // 'rtl'
 	 */
 	get textDirection(): 'ltr' | 'rtl' {
 		return this.isCurrentLocaleRTL ? 'rtl' : 'ltr'
@@ -1423,7 +1023,7 @@ export default class I18XS {
 
 		if (typeof obj === 'object' && obj !== null) {
 			// Check if it's a pluralization object (has zero, one, two, other)
-			if ('zero' in obj || 'one' in obj || 'two' in obj || 'other' in obj) {
+			if (this.isPluralizationObject(obj)) {
 				if (prefix) {
 					keys.add(prefix)
 				}
@@ -1446,23 +1046,6 @@ export default class I18XS {
 	 * @returns True if the key exists, false otherwise
 	 */
 	private hasKey(key: string, obj: Localization): boolean {
-		// Try flat key first
-		if (key in obj) {
-			return true
-		}
-
-		// Try nested navigation
-		const keys = key.split('.')
-		let current: Localization | string = obj
-
-		for (const k of keys) {
-			if (typeof current === 'object' && current !== null && k in current) {
-				current = current[k]
-			} else {
-				return false
-			}
-		}
-
-		return current !== undefined
+		return lookup(key, obj) !== undefined
 	}
 }

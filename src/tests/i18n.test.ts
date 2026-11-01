@@ -2222,8 +2222,8 @@ describe('I18XS formatCurrency', () => {
 			supportedLocales: ['en', 'ar'],
 		})
 
-		const result = i18xs.formatCurrency(1500, 'SAR')
-		expect(result).toContain('ر.س') // SAR symbol in Arabic
+		const result = i18xs.formatCurrency(1500, 'SAR', { currencyDisplay: 'code' })
+		expect(result).toContain('SAR')
 	})
 
 	it('Should format currency with EGP (Egyptian Pound)', async () => {

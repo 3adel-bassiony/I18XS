@@ -172,7 +172,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
     - #### Performance and Usage
 
-        -   **Efficient Loading:** I18XS optimizes performance by loading only the current locale's JSON file. This approach ensures faster load times and reduces memory usage.
+        -   **Efficient Loading:** Preloading (enabled by default) loads supported locales and the fallback locale once per instance. Optional shared caching avoids repeating file reads and JSON parsing across request instances. Set `preloadLocalizations: false` to load individual files on demand.
         -   **Multiple Files per Locale:** Each locale is represented by a folder and inside it multiple JSON files. This structure facilitates easier management and collaboration, also significantly enhancing performance and making it read faster.
         -   **Nested Objects Support:** The library supports nested objects, allowing you to logically group related localizations for better organization.
         -   **Pluralization:** I18XS handles plural localization, allowing different translations based on quantity (e.g., zero, one, two, other).
@@ -224,6 +224,79 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
 -   ### Methods/Properties
 
+    #### Server requests and shared caching
+
+    Create an independent instance for each request. Enable shared disk caching with
+    `cacheTtl` (seconds) to reuse translation catalogs across those instances:
+
+    ```typescript
+    import I18XS, { type Config } from 'i18xs'
+
+    const config: Config = {
+        localesDir: './src/locales',
+        featuresDir: './src/features',
+        supportedLocales: ['en', 'ar'],
+        fallbackLocale: 'en',
+        preloadLocalizations: true,
+        cacheTtl: 300,
+    }
+
+    const englishRequest = new I18XS({ ...config, currentLocale: 'en' })
+    const arabicRequest = new I18XS({ ...config, currentLocale: 'ar' })
+    ```
+
+    The cache shares translation data, while each instance keeps its own locale,
+    formatting options, and caller-provided messages. Cache keys include absolute
+    source directories and loaded locales. File and catalog caches each retain at
+    most 128 entries. Lazy loading can use the same `cacheTtl` option.
+
+    `cacheTtl` defaults to `0`, preserving instance-local caching and fresh file
+    reads when a new instance is created. This is useful during development. A
+    positive TTL allows new instances to reuse disk data until that TTL expires;
+    `Infinity` retains it until invalidation or eviction. Existing instances retain
+    their translation snapshots, including after shared-cache expiry.
+
+    ```typescript
+    // Force this instance to reload changed and deleted files/keys.
+    englishRequest.preloadAllLocalizations()
+
+    // Clear shared caches so future instances read from disk again.
+    I18XS.clearCache()
+    ```
+
+    Explicit preloading also invalidates shared catalogs using the same source
+    directories. Caller-provided `localizations` are copied and never stored in
+    the shared disk cache. When combining inline and disk messages, disk files
+    take precedence for matching files and merged keys.
+
+    #### Lookup and runtime behavior
+
+    -   TypeScript source keeps helpers in separate files with extensionless imports.
+        `bun run build` uses native `bun build` for the single `build/index.js`
+        runtime bundle and `tsc --emitDeclarationOnly` for declarations. The native
+        `--define require=require` option preserves the guarded runtime loader without
+        adding an eager require shim. Types use the native `package.json` `imports`
+        mapping for extensionless references, including NodeNext type resolution.
+        Existing `build/types/*` type imports remain available.
+    -   A file-prefixed key such as `common.title` resolves within `common.json`
+        before trying the merged namespace. The same applies to feature prefixes.
+    -   Prefixless keys are available with preloading. Files and features are loaded
+        alphabetically, with feature files after traditional files. Later leaves
+        override earlier leaves while nested sibling keys remain available.
+    -   Translation lookups fall back per missing key. Empty strings are valid
+        translations. `hasIdentifier()` follows the same rules as `t()`.
+    -   `useFallbackLocale` controls `getLocalizedValue()`; translation lookups use
+        `fallbackLocale` independently of that option. Localized object entries may
+        be strings, `null`, or `undefined`.
+    -   All runtimes use the same `index.js` entry. It enables filesystem support
+        when Node.js/Bun built-ins are available and uses in-memory messages in
+        browsers and React Native, without static Node.js imports. Native Node ESM
+        filesystem loading uses [`process.getBuiltinModule`](https://nodejs.org/api/process.html#processgetbuiltinmoduleid)
+        (available since Node 20.16.0 / 22.3.0); an available CommonJS `require`
+        loader is also supported. Runtimes with neither loader can still use
+        in-memory messages. For memory-only use in Node.js, set both `localesDir`
+        and `featuresDir` to `''`.
+
     -   **Localize a message**: You can localize a message by using one of those methods, the localization methods takes an identifier that contains the file name and the key you want to localize, for example, if the file name `common.json` and the message is `Hello_World` you can use it like this:
 
         ```typescript
@@ -243,10 +316,10 @@ The I18XS package comes with a comprehensive set of features designed to make in
         i18xs.changeCurrentLocale('es') // -> Update the current locale
         ```
 
-    -   **isCurrentLocale**: Use this method to check if the current locale is what you looking for or not.
+    -   **isCurrentLocale**: Use this method to check whether a locale is supported.
 
         ```typescript
-        i18xs.isCurrentLocale('es') // -> Update the current locale
+        i18xs.isCurrentLocale('es') // -> True when 'es' is supported
         ```
 
     -   **hasIdentifier** Check if a specific identifier exists in the localization object or not
@@ -286,12 +359,6 @@ The I18XS package comes with a comprehensive set of features designed to make in
         i18xs.fallbackLocale // -> 'en'
         ```
 
-    -   **localization** Get the localization object
-
-        ```typescript
-        i18xs.fallbackLocale // -> 'en'
-        ```
-
     -   **isCurrentLocaleLTR**: Check if the current locale is Left-To-Right (LTR) or not
 
         ```typescript
@@ -301,7 +368,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
     -   **isCurrentLocaleRTL**: Check if the current locale is Right-To-Left (RTL) or not
 
         ```typescript
-        i18xs.isCurrentLocaleLTR // -> True || False
+        i18xs.isCurrentLocaleRTL // -> True || False
         ```
 
     -   **isShowLogs**: Check if the debug mode is enabled or not

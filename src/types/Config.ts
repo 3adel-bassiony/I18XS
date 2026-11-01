@@ -1,16 +1,18 @@
-import { Localization } from './Localization'
+import type { Localization } from '#types/Localization'
 
-export interface Config {
-	supportedLocales?: string[]
+export type Config = {
+	supportedLocales?: readonly string[]
 	currentLocale?: string
 	fallbackLocale?: string
 	useFallbackLocale?: boolean
 	showMissingIdentifierMessage?: boolean
 	missingIdentifierMessage?: string
-	rtlLocales?: string[]
+	rtlLocales?: readonly string[]
 	localesDir?: string
 	featuresDir?: string
 	showLogs?: boolean
 	localizations?: Record<string, Record<string, Localization>>
 	preloadLocalizations?: boolean
+	/** Shared disk-cache lifetime in seconds. Zero (default) keeps caching instance-local. */
+	cacheTtl?: number
 }
