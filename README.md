@@ -172,7 +172,7 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
     - #### Performance and Usage
 
-        -   **Efficient Loading:** Preloading (enabled by default) loads supported locales and the fallback locale once per instance. Optional shared caching avoids repeating file reads and JSON parsing across request instances. Set `preloadLocalizations: false` to load individual files on demand.
+        -   **Efficient Loading:** Preloading (enabled by default) makes supported locales and the fallback locale available immediately. Shared caching is enabled by default to avoid repeating file reads and JSON parsing across request instances. Set `preloadLocalizations: false` to load individual files on demand.
         -   **Multiple Files per Locale:** Each locale is represented by a folder and inside it multiple JSON files. This structure facilitates easier management and collaboration, also significantly enhancing performance and making it read faster.
         -   **Nested Objects Support:** The library supports nested objects, allowing you to logically group related localizations for better organization.
         -   **Pluralization:** I18XS handles plural localization, allowing different translations based on quantity (e.g., zero, one, two, other).
@@ -226,8 +226,8 @@ The I18XS package comes with a comprehensive set of features designed to make in
 
     #### Server requests and shared caching
 
-    Create an independent instance for each request. Enable shared disk caching with
-    `cacheTtl` (seconds) to reuse translation catalogs across those instances:
+    Create an independent instance for each request. Shared disk caching is enabled
+    by default, so translation catalogs are reused across those instances:
 
     ```typescript
     import I18XS, { type Config } from 'i18xs'
@@ -238,7 +238,6 @@ The I18XS package comes with a comprehensive set of features designed to make in
         supportedLocales: ['en', 'ar'],
         fallbackLocale: 'en',
         preloadLocalizations: true,
-        cacheTtl: 300,
     }
 
     const englishRequest = new I18XS({ ...config, currentLocale: 'en' })
@@ -250,11 +249,14 @@ The I18XS package comes with a comprehensive set of features designed to make in
     source directories and loaded locales. File and catalog caches each retain at
     most 128 entries. Lazy loading can use the same `cacheTtl` option.
 
-    `cacheTtl` defaults to `0`, preserving instance-local caching and fresh file
-    reads when a new instance is created. This is useful during development. A
-    positive TTL allows new instances to reuse disk data until that TTL expires;
-    `Infinity` retains it until invalidation or eviction. Existing instances retain
-    their translation snapshots, including after shared-cache expiry.
+    `cacheTtl` defaults to `Infinity`: shared catalogs have no time-based expiry.
+    They remain cached until invalidation, eviction, or process restart, so new
+    processes after deployment load updated files. This changes the previous
+    default of `0`. Set `cacheTtl: 0` to disable shared caching and read fresh files
+    for each new instance, which is useful when editing translations during
+    development. A finite positive TTL controls expiry in seconds. Existing
+    instances retain their translation snapshots, including after shared-cache
+    expiry or invalidation.
 
     ```typescript
     // Force this instance to reload changed and deleted files/keys.

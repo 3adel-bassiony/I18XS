@@ -27,13 +27,15 @@ afterEach(() => {
 })
 
 describe('Shared localization catalogs', () => {
-	it('reuses a preloaded catalog across instances while isolating request locales', async () => {
+	it('shares preloaded catalogs indefinitely by default while isolating request locales', async () => {
 		const { localesDir, write } = fixture()
 		write('en', 'common', { greeting: 'Hello' })
 		write('ar', 'common', { greeting: 'مرحبا' })
-		const config = { localesDir, supportedLocales: ['en', 'ar'], cacheTtl: 300 }
+		const clock = spyOn(Date, 'now').mockReturnValue(10_000)
+		const config = { localesDir, supportedLocales: ['en', 'ar'] }
 		const english = new I18XS({ ...config, currentLocale: 'en' })
 		renameSync(localesDir, `${localesDir}-offline`)
+		clock.mockReturnValue(10_000 + 365 * 24 * 60 * 60 * 1000)
 		const arabic = new I18XS({ ...config, currentLocale: 'ar' })
 		expect(arabic.t('common.greeting')).toBe('مرحبا')
 		const responses = await Promise.all(
@@ -45,6 +47,15 @@ describe('Shared localization catalogs', () => {
 		expect(responses).toEqual(['Hello', 'مرحبا', 'Hello', 'مرحبا'])
 		arabic.changeCurrentLocale('en')
 		expect(english.currentLocale).toBe('en')
+	})
+
+	it('defaults configure to shared caching when cacheTtl is omitted', () => {
+		const { localesDir, write } = fixture()
+		write('en', 'common', { greeting: 'Before' })
+		const i18n = new I18XS({ localesDir, cacheTtl: 0 })
+		i18n.configure({ localesDir })
+		write('en', 'common', { greeting: 'After' })
+		expect(new I18XS({ localesDir }).t('common.greeting')).toBe('Before')
 	})
 
 	it('keeps catalogs from different roots separate', () => {
@@ -94,6 +105,7 @@ describe('Shared localization catalogs', () => {
 		const original = new I18XS({ localesDir })
 		write('en', 'common', { greeting: 'After' })
 		expect(new I18XS({ localesDir, cacheTtl: 0 }).t('greeting')).toBe('After')
+		expect(new I18XS({ localesDir }).t('greeting')).toBe('Before')
 		expect(original.t('greeting')).toBe('Before')
 	})
 
@@ -162,16 +174,18 @@ describe('Shared localization catalogs', () => {
 		expect(read(1)).toBe('greeting')
 	})
 
-	it('shares lazy file reads without letting a cached fallback replace the requested locale', () => {
+	it('shares lazy file reads indefinitely by default without replacing the requested locale with a fallback', () => {
 		const { localesDir, write } = fixture()
 		write('en', 'common', { greeting: 'Hello' })
 		write('ar', 'common', { greeting: 'مرحبا' })
-		const config = { localesDir, supportedLocales: ['en', 'ar'], preloadLocalizations: false, cacheTtl: 300 }
+		const clock = spyOn(Date, 'now').mockReturnValue(10_000)
+		const config = { localesDir, supportedLocales: ['en', 'ar'], preloadLocalizations: false }
 		const i18n = new I18XS({ ...config, currentLocale: 'fr' })
 		expect(i18n.t('common.greeting')).toBe('Hello')
 		i18n.changeCurrentLocale('ar')
 		expect(i18n.t('common.greeting')).toBe('مرحبا')
 		renameSync(localesDir, `${localesDir}-offline`)
+		clock.mockReturnValue(10_000 + 365 * 24 * 60 * 60 * 1000)
 		expect(new I18XS({ ...config, currentLocale: 'ar' }).t('common.greeting')).toBe('مرحبا')
 	})
 })

@@ -26,8 +26,8 @@ beforeAll(() => {
 		`
 import I18XS from 'i18xs'
 const localesDir = ${JSON.stringify(join(packageRoot, 'src/tests/data/locales'))}
-const en = new I18XS({localesDir, supportedLocales:['en','ar'], currentLocale:'en', cacheTtl:300})
-const ar = new I18XS({localesDir, supportedLocales:['en','ar'], currentLocale:'ar', cacheTtl:300})
+const en = new I18XS({localesDir, supportedLocales:['en','ar'], currentLocale:'en'})
+const ar = new I18XS({localesDir, supportedLocales:['en','ar'], currentLocale:'ar'})
 if (en.t('general.Hello_World') !== 'Hello World') throw new Error('English disk localization failed')
 if (ar.t('general.Hello_World') !== 'مرحبًا بالعالم') throw new Error('Arabic disk localization failed')
 `

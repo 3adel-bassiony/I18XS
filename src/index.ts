@@ -81,7 +81,7 @@ export default class I18XS {
 	 */
 	protected _preloadLocalizations: boolean = true
 
-	private _cacheTtl: number = 0
+	private _cacheTtl: number = Infinity
 	private _inputLocalizations: Catalog = {}
 
 	/**
@@ -122,7 +122,7 @@ export default class I18XS {
 		showLogs = false,
 		localizations = {},
 		preloadLocalizations = true,
-		cacheTtl = 0,
+		cacheTtl = Infinity,
 	}: Config = {}) {
 		this.configure({
 			localesDir,
@@ -265,7 +265,7 @@ export default class I18XS {
 		showLogs = false,
 		localizations = {},
 		preloadLocalizations = true,
-		cacheTtl = 0,
+		cacheTtl = Infinity,
 	}: Config = {}): I18XS {
 		if (typeof cacheTtl !== 'number' || Number.isNaN(cacheTtl) || cacheTtl < 0) {
 			throw new RangeError('cacheTtl must be a non-negative number of seconds')

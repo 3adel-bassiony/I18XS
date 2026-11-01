@@ -13,6 +13,6 @@ export type Config = {
 	showLogs?: boolean
 	localizations?: Record<string, Record<string, Localization>>
 	preloadLocalizations?: boolean
-	/** Shared disk-cache lifetime in seconds. Zero (default) keeps caching instance-local. */
+	/** Shared disk-cache lifetime in seconds. Defaults to Infinity; zero disables shared caching. */
 	cacheTtl?: number
 }
